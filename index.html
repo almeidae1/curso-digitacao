@@ -364,6 +364,18 @@ let combo = 0, melhor = 0, proximoDados = null, nErros = 0;
 let painel = null, sessao = { tipo: 'licao' }, finalizando = false, relogio = null;
 const $ = id => document.getElementById(id);
 
+// localStorage pode estar bloqueado (aba privada, iframe da Vercel, cookies de
+// terceiros): nunca pode quebrar o app.
+const lerLocal = chave => {
+  try { return localStorage.getItem(chave); } catch { return null; }
+};
+const salvarLocal = (chave, valor) => {
+  try { localStorage.setItem(chave, valor); } catch { /* segue sem salvar */ }
+};
+const apagarLocal = chave => {
+  try { localStorage.removeItem(chave); } catch { /* ignora */ }
+};
+
 async function carregar() {
   try {
     const j = await (await fetch(API + '/api/iniciar?perfil=' + perfil.id)).json();
@@ -558,7 +570,7 @@ $('p-lista').onclick = async e => {
   if (del) {
     if (!confirm(`Excluir o perfil "${del.dataset.nome}" e todo o progresso? Não dá para desfazer.`)) return;
     await fetch(API + '/api/perfis/' + del.dataset.del, { method: 'DELETE' });
-    if (perfil && perfil.id === del.dataset.del) { perfil = null; localStorage.removeItem('perfilAtual'); }
+    if (perfil && perfil.id === del.dataset.del) { perfil = null; apagarLocal('perfilAtual'); }
     listarPerfis(); return;
   }
   const card = e.target.closest('.pf'); if (card) selecionar(card.dataset.id);
@@ -572,10 +584,23 @@ $('p-criar').onclick = criar;
 $('p-nome').onkeydown = e => { if (e.key === 'Enter') criar(); };
 
 async function selecionar(id) {
-  perfil = await (await fetch(API + '/api/perfis/' + id)).json();
-  localStorage.setItem('perfilAtual', id);
-  $('b-perfil').textContent = perfil.nome; $('perfis').classList.remove('show'); $('met').classList.remove('show'); $('lic').classList.remove('show'); $('av').classList.remove('show');
-  carregar();
+  try {
+    const resposta = await fetch(API + '/api/perfis/' + id);
+    if (!resposta.ok) throw new Error('o servidor respondeu HTTP ' + resposta.status);
+    const dados = await resposta.json();
+    if (!dados || !dados.id) throw new Error((dados && dados.erro) || 'perfil vazio');
+    perfil = dados;
+    salvarLocal('perfilAtual', id);
+    $('b-perfil').textContent = perfil.nome;
+    ['perfis', 'met', 'lic', 'av', 'testes', 'rank', 'ajustes', 'revisao'].forEach(m => {
+      const el = $(m);
+      if (el) el.classList.remove('show');
+    });
+    carregar();
+  } catch (erro) {
+    // nunca falhar em silêncio: se não abrir, o aluno precisa saber por quê
+    aviso('Não consegui abrir o perfil: ' + (erro && erro.message ? erro.message : 'erro desconhecido'), 'Erro');
+  }
 }
 $('b-perfil').onclick = abrirPerfis;
 
@@ -1999,7 +2024,7 @@ $('b-ajustes').onclick = () => abrirAjustes();
 
 async function iniciarApp() {
   try {
-    const lista = await listarPerfis(), salvo = localStorage.getItem('perfilAtual');
+    const lista = await listarPerfis(), salvo = lerLocal('perfilAtual');
     if (salvo && lista.some(p => p.id === salvo)) selecionar(salvo); else abrirPerfis();
   } catch {
     let online = false;
