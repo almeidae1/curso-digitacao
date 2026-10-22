@@ -583,12 +583,29 @@ async function criar() {
 $('p-criar').onclick = criar;
 $('p-nome').onkeydown = e => { if (e.key === 'Enter') criar(); };
 
+async function buscarPerfil(id, tentativas = 2) {
+  let ultimo = null;
+  for (let i = 0; i < tentativas; i++) {
+    try {
+      const resposta = await fetch(API + '/api/perfis/' + encodeURIComponent(id));
+      const texto = await resposta.text();
+      let corpo = null;
+      try { corpo = texto ? JSON.parse(texto) : null; } catch { corpo = null; }
+      if (resposta.ok && corpo && corpo.id) return corpo;
+      ultimo = new Error((corpo && corpo.erro) || 'HTTP ' + resposta.status);
+      // 404 pode ser uma instância sem o perfil em memória: tenta de novo
+      if (resposta.status !== 404) break;
+    } catch (erro) {
+      ultimo = erro instanceof Error ? erro : new Error(String(erro));
+    }
+    if (i + 1 < tentativas) await new Promise(r => setTimeout(r, 600));
+  }
+  throw ultimo || new Error('não consegui abrir o perfil');
+}
+
 async function selecionar(id) {
   try {
-    const resposta = await fetch(API + '/api/perfis/' + id);
-    if (!resposta.ok) throw new Error('o servidor respondeu HTTP ' + resposta.status);
-    const dados = await resposta.json();
-    if (!dados || !dados.id) throw new Error((dados && dados.erro) || 'perfil vazio');
+    const dados = await buscarPerfil(id);
     perfil = dados;
     salvarLocal('perfilAtual', id);
     $('b-perfil').textContent = perfil.nome;

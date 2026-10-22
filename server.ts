@@ -546,7 +546,10 @@ async function carregarLicoes(gravarDepois = true) {
   } catch (erro) {
     console.warn('Não consegui ler as lições:', erro instanceof Error ? erro.message : erro);
     await store.copiarParaBak(store.CAMINHO_LICOES);
-    dados = null;
+    if (licoes.length) return; // mantém o que já está em memória
+    licoes = LICOES_INICIAIS.map(l => ({ ...l }));
+    if (avLicoes.length === 0) avLicoes = AV_INICIAIS.map(a => ({ ...a }));
+    return;
   }
 
   if (!dados) {
@@ -581,9 +584,13 @@ async function carregarPerfis() {
     const dados = await store.lerPerfis();
     perfis = Array.isArray(dados) ? (dados as Perfil[]) : [];
   } catch (erro) {
-    console.warn('Não consegui ler os perfis:', erro instanceof Error ? erro.message : erro);
+    // Falha de leitura NÃO pode esvaziar a memória: se já temos perfis
+    // carregados, seguimos com eles (senão o aluno "desaparece" por 15 s).
+    console.warn(
+      'Não consegui ler os perfis, mantendo os que já estavam em memória:',
+      erro instanceof Error ? erro.message : erro
+    );
     await store.copiarParaBak(store.CAMINHO_PERFIS);
-    perfis = [];
   }
   perfis.forEach(ajustarPerfil);
 }
@@ -617,9 +624,21 @@ app.post('/api/perfis', async (req, res) => {
   res.status(201).json(resumo(p));
 });
 
-app.get('/api/perfis/:id', (req, res) => {
-  const p = perfis.find(x => x.id === req.params.id);
-  return p ? res.json(p) : res.status(404).json({ erro: 'Perfil não encontrado.' });
+app.get('/api/perfis/:id', async (req, res) => {
+  let p = perfis.find(x => x.id === req.params.id);
+  if (!p) {
+    // Cada instância (lambda) tem a sua memória. Se o perfil não está aqui,
+    // pode ter sido criado/alterado em outra instância: relê do banco uma vez.
+    try {
+      await carregarPerfis();
+    } catch {
+      /* segue com o que já tem em memória */
+    }
+    p = perfis.find(x => x.id === req.params.id);
+  }
+  if (!p) return res.status(404).json({ erro: 'Perfil não encontrado.' });
+  ajustarPerfil(p);
+  res.json(p);
 });
 
 app.delete('/api/perfis/:id', async (req, res) => {
@@ -669,8 +688,17 @@ function montarExercicio(pos: Pos, perfil?: Perfil) {
   };
 }
 
-app.get('/api/iniciar', (req, res) => {
-  const perfil = perfis.find(p => p.id === req.query.perfil);
+app.get('/api/iniciar', async (req, res) => {
+  let perfil = perfis.find(p => p.id === req.query.perfil);
+  if (!perfil && req.query.perfil) {
+    // mesma proteção: instância diferente pode não ter o perfil em memória
+    try {
+      await carregarPerfis();
+    } catch {
+      /* segue com o que já tem */
+    }
+    perfil = perfis.find(p => p.id === req.query.perfil);
+  }
   if (perfil) ajustarPerfil(perfil);
   const exercicio = montarExercicio(perfil ? posDe(perfil) : { trilha: 'l', nivel: 1, etapa: 1 }, perfil);
   res.json({ ...exercicio, painel: perfil ? painelDe(perfil) : null });
