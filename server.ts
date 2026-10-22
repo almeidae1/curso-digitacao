@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { z } from 'zod';
@@ -7,13 +7,13 @@ import * as store from './lib/store';
 
 dotenv.config();
 
-// Erros assíncronos aparecem no log em uma linha (importante na Vercel).
+// Erros assÃ­ncronos aparecem no log em uma linha (importante na Vercel).
 process.on('unhandledRejection', erro => {
   console.error('Promise rejeitada sem tratamento:', erro instanceof Error ? erro.message : erro);
 });
 
 // ---------------------------------------------------------------------------
-// Configuração
+// ConfiguraÃ§Ã£o
 // ---------------------------------------------------------------------------
 const PORT = Number(process.env.PORT) || 3000;
 const JEV_API_KEY = process.env.JEV_API_KEY;
@@ -22,20 +22,35 @@ const JEV_MODELO = 'jev-latest';
 const JEV_TIMEOUT_MS = 4000;
 
 const CERTEZA_MINIMA = 0.3; // certeza = |p - 0,5| * 2; abaixo disso, vale a regra fixa (p entre 0,35 e 0,65)
-const LIMIAR_DIFICULDADE = 0.7; // p mínima de 'muita dificuldade' para voltar de etapa
-const PRECISAO_PADRAO = 85; // meta padrão de precisão (%)
-const WPM_PADRAO_NOVA = 15; // meta padrão de velocidade para lições novas
+const LIMIAR_DIFICULDADE = 0.7; // p mÃ­nima de 'muita dificuldade' para voltar de etapa
+const PRECISAO_PADRAO = 85; // meta padrÃ£o de precisÃ£o (%)
+const WPM_PADRAO_NOVA = 15; // meta padrÃ£o de velocidade para liÃ§Ãµes novas
 const MAX_LICOES = 60;
-const MIN_ERROS_FRACA = 2; // erros no mesmo exercício para a tecla entrar na lista de treino
-const LIMPAS_PARA_SAIR = 3; // exercícios seguidos sem erro para a tecla sair da lista
-const TETO_TENTATIVAS = 10; // exercícios na mesma etapa antes de sugerir voltar
+const MIN_ERROS_FRACA = 2; // erros no mesmo exercÃ­cio para a tecla entrar na lista de treino
+const LIMPAS_PARA_SAIR = 3; // exercÃ­cios seguidos sem erro para a tecla sair da lista
+const TETO_TENTATIVAS = 10; // exercÃ­cios na mesma etapa antes de sugerir voltar
+const DIAS_LIXEIRA = 30; // dias que um perfil excluÃ­do fica recuperÃ¡vel
 const CODIGO_ACESSO = (process.env.CODIGO_ACESSO || '').trim(); // vazio = site aberto
+// CÃ³digo do administrador: sÃ³ quem tem este cÃ³digo pode excluir/criar liÃ§Ãµes,
+// mudar pontuaÃ§Ã£o, mexer na lixeira. Vazio = todos podem (comportamento antigo).
+const CODIGO_ADMIN = (process.env.CODIGO_ADMIN || '').trim();
+
+/** Responde 403 quando a aÃ§Ã£o exige o administrador e o cÃ³digo nÃ£o confere. */
+function exigirAdmin(req: any, res: any, next: any) {
+  if (!CODIGO_ADMIN) return next(); // sem cÃ³digo de admin configurado: liberado
+  const enviado = String(req.get('x-admin') || '');
+  if (enviado && enviado === CODIGO_ADMIN) return next();
+  return res.status(403).json({
+    erro: 'SÃ³ o administrador pode fazer isso. Entre com o cÃ³digo de administrador em Ajustes.',
+    admin: true
+  });
+}
 
 const app = express();
 app.use(cors());
 
-// A Vercel pode entregar o corpo já convertido em objeto. Nesse caso não
-// tentamos ler o fluxo outra vez (isso travaria a requisição).
+// A Vercel pode entregar o corpo jÃ¡ convertido em objeto. Nesse caso nÃ£o
+// tentamos ler o fluxo outra vez (isso travaria a requisiÃ§Ã£o).
 const jsonParser = express.json({ limit: '4mb' });
 app.use((req, res, next) => {
   const corpo = (req as unknown as { body?: unknown }).body;
@@ -43,7 +58,7 @@ app.use((req, res, next) => {
   return jsonParser(req, res, next);
 });
 
-// --- ping público (a tela de acesso usa antes de tudo) ---
+// --- ping pÃºblico (a tela de acesso usa antes de tudo) ---
 app.get('/api/ping', async (_req, res) => {
   let banco: boolean | null = null;
   if (store.naNuvem()) {
@@ -57,22 +72,24 @@ app.get('/api/ping', async (_req, res) => {
   res.json({
     ok: true,
     codigo: Boolean(CODIGO_ACESSO),
+    admin: Boolean(CODIGO_ADMIN), // existe cÃ³digo de administrador configurado?
+    adminOk: Boolean(CODIGO_ADMIN) && String(_req.get('x-admin') || '') === CODIGO_ADMIN,
     nuvem: store.naNuvem(),
     origem: store.descrever(),
     banco
   });
 });
 
-// --- código de acesso opcional (defina CODIGO_ACESSO na Vercel) ---
+// --- cÃ³digo de acesso opcional (defina CODIGO_ACESSO na Vercel) ---
 app.use('/api', (req, res, next) => {
   if (!CODIGO_ACESSO) return next();
   if (req.path === '/ping') return next();
   const enviado = String(req.get('x-codigo') || '');
   if (enviado && enviado === CODIGO_ACESSO) return next();
-  return res.status(401).json({ erro: 'Código de acesso inválido.', codigo: true });
+  return res.status(401).json({ erro: 'CÃ³digo de acesso invÃ¡lido.', codigo: true });
 });
 
-// --- inicialização por instância + leitura fresca do banco ---
+// --- inicializaÃ§Ã£o por instÃ¢ncia + leitura fresca do banco ---
 app.use('/api', async (_req, _res, next) => {
   try {
     await iniciar();
@@ -84,15 +101,15 @@ app.use('/api', async (_req, _res, next) => {
 });
 
 // ---------------------------------------------------------------------------
-// Apelidos de um pedaço só.
+// Apelidos de um pedaÃ§o sÃ³.
 //
-// Em alguns deploys (Vercel) a função recebe apenas /api/<um-segmento>; rotas
+// Em alguns deploys (Vercel) a funÃ§Ã£o recebe apenas /api/<um-segmento>; rotas
 // com barra no meio davam 404 na borda. Aqui reescrevemos os caminhos achatados
-// para as rotas normais, então o app funciona mesmo nesses casos:
+// para as rotas normais, entÃ£o o app funciona mesmo nesses casos:
 //
-//   /api/perfil?id=UUID          →  /api/perfis/UUID
-//   /api/perfil-prefs            →  /api/perfis/UUID/prefs
-//   /api/teste-texto             →  /api/testes/texto
+//   /api/perfil?id=UUID          â†’  /api/perfis/UUID
+//   /api/perfil-prefs            â†’  /api/perfis/UUID/prefs
+//   /api/teste-texto             â†’  /api/testes/texto
 // ---------------------------------------------------------------------------
 app.use((req, _res, next) => {
   const url = req.url || '';
@@ -167,8 +184,8 @@ app.use((req, _res, next) => {
 });
 
 // ---------------------------------------------------------------------------
-// Palavras (sem acentos). Só entram na etapa "Palavras" as que usam apenas
-// letras já aprendidas.
+// Palavras (sem acentos). SÃ³ entram na etapa "Palavras" as que usam apenas
+// letras jÃ¡ aprendidas.
 // ---------------------------------------------------------------------------
 const PALAVRAS: string[] = [...new Set(`
 a ao as da de do em eu um no na os se ou la ja me te ti ele ela nos mas por com sem sob ate que quem sim nao mais bem mal tao pra
@@ -194,34 +211,34 @@ lago lajota lama lance lanche lapis leao leite lenha letra lixo logo longe lugar
 dama data dedo dia disco dois dono dor duvida duro
 sede sede selo sera sinal sino sobre sonho sorte sorriso suave sul
 altas alto asso assa assado falsas
-`.split(/\s+/).filter(p => /^[a-zç]{2,}$/.test(p)))]
-  .concat(['alça', 'alças', 'calça', 'laço', 'faça', 'força', 'braço', 'peça', 'moça', 'praça', 'cabeça', 'poça', 'caça']);
+`.split(/\s+/).filter(p => /^[a-zÃ§]{2,}$/.test(p)))]
+  .concat(['alÃ§a', 'alÃ§as', 'calÃ§a', 'laÃ§o', 'faÃ§a', 'forÃ§a', 'braÃ§o', 'peÃ§a', 'moÃ§a', 'praÃ§a', 'cabeÃ§a', 'poÃ§a', 'caÃ§a']);
 
 // ---------------------------------------------------------------------------
-// Lições (salvas em licoes.json). As 4 primeiras são fixas; as demais você cria.
+// LiÃ§Ãµes (salvas em licoes.json). As 4 primeiras sÃ£o fixas; as demais vocÃª cria.
 // ---------------------------------------------------------------------------
 type Licao = {
   numero: number;
   titulo: string;
   letras: string;
-  precisaoMin: number; // meta de precisão (%) para passar de etapa
+  precisaoMin: number; // meta de precisÃ£o (%) para passar de etapa
   wpmMin: number; // meta de velocidade (palavras por minuto) para passar de etapa
   fixa: boolean;
 };
 
 const LICOES_INICIAIS: Licao[] = [
   { numero: 1, titulo: 'Teclas Guia F e J (Indicadores)', letras: 'fj', precisaoMin: PRECISAO_PADRAO, wpmMin: 0, fixa: true },
-  { numero: 2, titulo: 'Posição de Base Esquerda (A S D F)', letras: 'asdf', precisaoMin: PRECISAO_PADRAO, wpmMin: 0, fixa: true },
-  { numero: 3, titulo: 'Posição de Base Direita (J K L Ç)', letras: 'jklç', precisaoMin: PRECISAO_PADRAO, wpmMin: 0, fixa: true },
-  { numero: 4, titulo: 'Linha de Base Completa (Ambas as Mãos)', letras: 'asdfjklç', precisaoMin: PRECISAO_PADRAO, wpmMin: 0, fixa: true }
+  { numero: 2, titulo: 'PosiÃ§Ã£o de Base Esquerda (A S D F)', letras: 'asdf', precisaoMin: PRECISAO_PADRAO, wpmMin: 0, fixa: true },
+  { numero: 3, titulo: 'PosiÃ§Ã£o de Base Direita (J K L Ã‡)', letras: 'jklÃ§', precisaoMin: PRECISAO_PADRAO, wpmMin: 0, fixa: true },
+  { numero: 4, titulo: 'Linha de Base Completa (Ambas as MÃ£os)', letras: 'asdfjklÃ§', precisaoMin: PRECISAO_PADRAO, wpmMin: 0, fixa: true }
 ];
 
-type TrilhaId = 'l' | 'a'; // l = lições de letras, a = Avançado
+type TrilhaId = 'l' | 'a'; // l = liÃ§Ãµes de letras, a = AvanÃ§ado
 type Pos = { trilha: TrilhaId; nivel: number; etapa: number };
 type TipoEtapa = 'basico' | 'mistura' | 'palavras' | 'frases';
 const NOME_ETAPA: Record<TipoEtapa, string> = {
-  basico: 'Só as teclas da lição',
-  mistura: 'Mistura com as lições anteriores',
+  basico: 'SÃ³ as teclas da liÃ§Ã£o',
+  mistura: 'Mistura com as liÃ§Ãµes anteriores',
   palavras: 'Palavras',
   frases: 'Frases do dia a dia'
 };
@@ -232,11 +249,11 @@ type Config = { modo: 'todas' | 'manual'; padrao: Pontuacao; avAutomatico: boole
 let config: Config = { modo: 'manual', padrao: { precisaoMin: PRECISAO_PADRAO, wpmMin: WPM_PADRAO_NOVA }, avAutomatico: false };
 
 const licaoPor = (n: number) => licoes.find(l => l.numero === n);
-const tituloCompleto = (l: Licao) => `Lição ${l.numero}: ${l.titulo}`;
+const tituloCompleto = (l: Licao) => `LiÃ§Ã£o ${l.numero}: ${l.titulo}`;
 const letrasAnteriores = (n: number) => new Set(licoes.filter(l => l.numero < n).flatMap(l => [...l.letras]));
 const letrasAcumuladas = (n: number) => new Set([...letrasAnteriores(n), ...(licaoPor(n)?.letras ?? '')]);
 
-/** Palavras que só usam letras já aprendidas e têm pelo menos uma letra da lição. */
+/** Palavras que sÃ³ usam letras jÃ¡ aprendidas e tÃªm pelo menos uma letra da liÃ§Ã£o. */
 function palavrasDaL(n: number): string[] {
   const l = licaoPor(n);
   if (!l) return [];
@@ -244,7 +261,7 @@ function palavrasDaL(n: number): string[] {
   return PALAVRAS.filter(p => [...p].every(c => acum.has(c)) && [...p].some(c => l.letras.includes(c)));
 }
 
-/** Etapas que a lição tem (depende das letras e das lições anteriores). */
+/** Etapas que a liÃ§Ã£o tem (depende das letras e das liÃ§Ãµes anteriores). */
 function etapasDaL(n: number): TipoEtapa[] {
   const l = licaoPor(n);
   const etapas: TipoEtapa[] = ['basico'];
@@ -272,7 +289,7 @@ const embaralhar = <T,>(lista: readonly T[]): T[] => {
 /** Treino dirigido: pesos por tecla fraca (erros) e pares confundidos ("esperada>digitada"). */
 type Treino = { teclas: Record<string, number>; pares: string[] };
 
-/** Letras que realmente aparecem nos exercícios de uma etapa. */
+/** Letras que realmente aparecem nos exercÃ­cios de uma etapa. */
 function letrasDaEtapaL(n: number, etapa: number): Set<string> {
   const l = licaoPor(n);
   if (!l) return new Set();
@@ -292,10 +309,10 @@ function sortearPonderado(itens: [string, number][]): string {
 }
 
 /**
- * Gera o exercício. Fica mais difícil conforme o número da lição sobe
+ * Gera o exercÃ­cio. Fica mais difÃ­cil conforme o nÃºmero da liÃ§Ã£o sobe
  * (mais grupos e grupos maiores). Com teclas fracas, o treino vira dirigido:
  * a maior parte do texto usa essas teclas (mais peso para quem errou mais)
- * e os pares confundidos aparecem alternados (ex: "lçlç").
+ * e os pares confundidos aparecem alternados (ex: "lÃ§lÃ§").
  */
 function gerarTextoL(n: number, etapa: number, treino?: Treino): string {
   const l = licaoPor(n);
@@ -350,12 +367,12 @@ function gerarTextoL(n: number, etapa: number, treino?: Treino): string {
 }
 
 // ---------------------------------------------------------------------------
-// Trilha AVANÇADO: lições criadas pelo sistema, só palavras e frases do dia a dia.
-// Avançado 1 = letras das lições 1 a 5, Avançado 2 = lições 1 a 10 (ou até a última
-// que existir), Avançado 3 em diante = tudo, da lição 1 até a última criada.
-// Nenhuma IA geradora: frases vêm de um banco fixo e de modelos (artigo + nome + verbo...).
+// Trilha AVANÃ‡ADO: liÃ§Ãµes criadas pelo sistema, sÃ³ palavras e frases do dia a dia.
+// AvanÃ§ado 1 = letras das liÃ§Ãµes 1 a 5, AvanÃ§ado 2 = liÃ§Ãµes 1 a 10 (ou atÃ© a Ãºltima
+// que existir), AvanÃ§ado 3 em diante = tudo, da liÃ§Ã£o 1 atÃ© a Ãºltima criada.
+// Nenhuma IA geradora: frases vÃªm de um banco fixo e de modelos (artigo + nome + verbo...).
 // ---------------------------------------------------------------------------
-const LIBERA_AVANCADO = 5; // o Avançado abre depois de concluir esta lição
+const LIBERA_AVANCADO = 5; // o AvanÃ§ado abre depois de concluir esta liÃ§Ã£o
 type AvLicao = { numero: number; precisaoMin: number; wpmMin: number; auto: boolean };
 let avLicoes: AvLicao[] = [];
 const AV_INICIAIS: AvLicao[] = [
@@ -366,11 +383,11 @@ const AV_INICIAIS: AvLicao[] = [
 
 const avEscopoAte = (n: number) => (n === 1 ? 5 : n === 2 ? 10 : Infinity);
 const avLetras = (n: number) => new Set(licoes.filter(l => l.numero <= avEscopoAte(n)).flatMap(l => [...l.letras]));
-const avEscopoTexto = (n: number) => `Lições 1 a ${Math.min(avEscopoAte(n), licoes.length)}`;
+const avEscopoTexto = (n: number) => `LiÃ§Ãµes 1 a ${Math.min(avEscopoAte(n), licoes.length)}`;
 const avTitulo = (n: number) =>
-  `Avançado ${n}: ${n <= 2 ? avEscopoTexto(n) : n === 3 ? 'Tudo que você aprendeu' : `Desafio ${n - 3}`}`;
+  `AvanÃ§ado ${n}: ${n <= 2 ? avEscopoTexto(n) : n === 3 ? 'Tudo que vocÃª aprendeu' : `Desafio ${n - 3}`}`;
 
-/** Próxima lição avançada: sempre um pouco mais difícil (meta sobe +1% e +2 palavras/min, até o teto). */
+/** PrÃ³xima liÃ§Ã£o avanÃ§ada: sempre um pouco mais difÃ­cil (meta sobe +1% e +2 palavras/min, atÃ© o teto). */
 function novaAvLicao(auto: boolean): AvLicao {
   const n = avLicoes.length + 1;
   const passos = Math.max(0, n - 3);
@@ -389,16 +406,16 @@ function vistaDa(trilha: TrilhaId, n: number): Vista | undefined {
 
 const palavrasCom = (letras: Set<string>) => PALAVRAS.filter(p => [...p].every(c => letras.has(c)));
 
-// --- vocabulário (sem acentos; ç só aparece se a lição do Ç já foi aprendida) ---
+// --- vocabulÃ¡rio (sem acentos; Ã§ sÃ³ aparece se a liÃ§Ã£o do Ã‡ jÃ¡ foi aprendida) ---
 const NOMES_M = ['gato', 'cachorro', 'menino', 'homem', 'pai', 'amigo', 'irmao', 'carro', 'livro', 'cafe', 'pao', 'sol', 'dia', 'trabalho', 'jogo', 'campo', 'mar', 'rio', 'vento', 'filho', 'professor', 'aluno', 'vizinho', 'patrao', 'barco', 'trem', 'onibus', 'banco', 'prato', 'copo', 'bolo', 'leite', 'suco', 'peixe', 'sapato', 'relogio', 'celular', 'telefone', 'caderno', 'lapis', 'mercado', 'parque', 'portao', 'quarto', 'banho', 'sono', 'cliente'];
-const NOMES_F = ['menina', 'mulher', 'mae', 'amiga', 'irma', 'casa', 'mesa', 'sala', 'porta', 'janela', 'chave', 'cama', 'rua', 'escola', 'aula', 'agua', 'fruta', 'cidade', 'praia', 'loja', 'noite', 'tarde', 'manha', 'semana', 'hora', 'vida', 'festa', 'musica', 'caneta', 'bolsa', 'camisa', 'roupa', 'comida', 'viagem', 'conta', 'nota', 'carta', 'lista', 'tarefa', 'prova', 'padaria', 'farmacia', 'estrada', 'ponte', 'chuva', 'luz', 'fila', 'moça', 'praça', 'cabeça'];
-const VERBOS_I = ['dorme', 'corre', 'chora', 'ri', 'sai', 'chega', 'volta', 'fala', 'canta', 'anda', 'trabalha', 'estuda', 'acorda', 'mora', 'vive', 'brinca', 'descansa', 'demora', 'funciona', 'cai', 'sobe', 'desce', 'passa', 'ajuda', 'almoça', 'começa', 'janta', 'sorri', 'pula', 'nada', 'joga', 'cresce'];
+const NOMES_F = ['menina', 'mulher', 'mae', 'amiga', 'irma', 'casa', 'mesa', 'sala', 'porta', 'janela', 'chave', 'cama', 'rua', 'escola', 'aula', 'agua', 'fruta', 'cidade', 'praia', 'loja', 'noite', 'tarde', 'manha', 'semana', 'hora', 'vida', 'festa', 'musica', 'caneta', 'bolsa', 'camisa', 'roupa', 'comida', 'viagem', 'conta', 'nota', 'carta', 'lista', 'tarefa', 'prova', 'padaria', 'farmacia', 'estrada', 'ponte', 'chuva', 'luz', 'fila', 'moÃ§a', 'praÃ§a', 'cabeÃ§a'];
+const VERBOS_I = ['dorme', 'corre', 'chora', 'ri', 'sai', 'chega', 'volta', 'fala', 'canta', 'anda', 'trabalha', 'estuda', 'acorda', 'mora', 'vive', 'brinca', 'descansa', 'demora', 'funciona', 'cai', 'sobe', 'desce', 'passa', 'ajuda', 'almoÃ§a', 'comeÃ§a', 'janta', 'sorri', 'pula', 'nada', 'joga', 'cresce'];
 const VERBOS_T = ['come', 'bebe', 'pega', 'abre', 'fecha', 'leva', 'traz', 'compra', 'vende', 'quer', 'tem', 'usa', 'faz', 've', 'le', 'escreve', 'lava', 'limpa', 'procura', 'encontra', 'perde', 'guarda', 'ouve', 'ama', 'conhece', 'prepara', 'paga', 'esquece'];
 const ADJETIVOS: [string, string][] = [['grande', 'grande'], ['pequeno', 'pequena'], ['bonito', 'bonita'], ['velho', 'velha'], ['novo', 'nova'], ['alto', 'alta'], ['baixo', 'baixa'], ['bom', 'boa'], ['forte', 'forte'], ['fraco', 'fraca'], ['quente', 'quente'], ['frio', 'fria'], ['doce', 'doce'], ['rapido', 'rapida'], ['lento', 'lenta'], ['calmo', 'calma'], ['feliz', 'feliz'], ['triste', 'triste'], ['cansado', 'cansada'], ['limpo', 'limpa'], ['sujo', 'suja'], ['cheio', 'cheia'], ['vazio', 'vazia'], ['barato', 'barata'], ['caro', 'cara'], ['facil', 'facil'], ['gostoso', 'gostosa'], ['claro', 'clara'], ['escuro', 'escura'], ['leve', 'leve'], ['pesado', 'pesada']];
 const ADVERBIOS = ['muito', 'bem', 'mal', 'hoje', 'ontem', 'amanha', 'sempre', 'nunca', 'agora', 'depois', 'cedo', 'tarde', 'aqui', 'ali', 'la', 'devagar'];
 const TEMPOS = ['hoje', 'amanha', 'ontem', 'agora'];
 const CONJUNCOES = ['e', 'mas', 'quando', 'porque'];
-const FRASES_FIXAS = ['bom dia', 'boa tarde', 'boa noite', 'tudo bem', 'como vai voce', 'ate logo', 'ate amanha', 'muito obrigado', 'de nada', 'por favor', 'com licença', 'desculpe o atraso', 'que dia lindo', 'vamos para casa', 'onde fica o banco', 'quanto custa isso', 'eu gosto de cafe', 'hoje faz sol', 'amanha vai chover', 'a conta por favor', 'vou ao mercado', 'preciso de ajuda', 'pode me ajudar', 'ja volto', 'nao sei de nada', 'esta tudo certo', 'qual e o seu nome', 'onde esta a chave', 'o jantar esta pronto', 'o cafe esta quente', 'a casa esta limpa', 'eu moro perto daqui', 'vou dormir cedo hoje', 'vamos jogar bola', 'a agua esta fria', 'ele chegou tarde', 'ela saiu cedo', 'o onibus ja passou', 'a loja abre cedo', 'preciso comprar pao', 'hoje e sabado', 'amanha e domingo', 'quero um copo de agua', 'faz muito calor hoje', 'a fila esta grande', 'o trem demora muito', 'feche a porta por favor', 'ligue para a mae', 'ja almocei hoje', 'vou pagar a conta', 'o preco esta bom', 'a aula começa cedo', 'ele gosta de musica', 'a menina leu a carta', 'o professor chegou', 'vamos ao parque hoje', 'a praia esta cheia', 'o sol saiu de novo', 'preciso de um lapis', 'abra a janela agora', 'a chuva passou', 'o filho esta dormindo', 'nos vamos sair cedo'];
+const FRASES_FIXAS = ['bom dia', 'boa tarde', 'boa noite', 'tudo bem', 'como vai voce', 'ate logo', 'ate amanha', 'muito obrigado', 'de nada', 'por favor', 'com licenÃ§a', 'desculpe o atraso', 'que dia lindo', 'vamos para casa', 'onde fica o banco', 'quanto custa isso', 'eu gosto de cafe', 'hoje faz sol', 'amanha vai chover', 'a conta por favor', 'vou ao mercado', 'preciso de ajuda', 'pode me ajudar', 'ja volto', 'nao sei de nada', 'esta tudo certo', 'qual e o seu nome', 'onde esta a chave', 'o jantar esta pronto', 'o cafe esta quente', 'a casa esta limpa', 'eu moro perto daqui', 'vou dormir cedo hoje', 'vamos jogar bola', 'a agua esta fria', 'ele chegou tarde', 'ela saiu cedo', 'o onibus ja passou', 'a loja abre cedo', 'preciso comprar pao', 'hoje e sabado', 'amanha e domingo', 'quero um copo de agua', 'faz muito calor hoje', 'a fila esta grande', 'o trem demora muito', 'feche a porta por favor', 'ligue para a mae', 'ja almocei hoje', 'vou pagar a conta', 'o preco esta bom', 'a aula comeÃ§a cedo', 'ele gosta de musica', 'a menina leu a carta', 'o professor chegou', 'vamos ao parque hoje', 'a praia esta cheia', 'o sol saiu de novo', 'preciso de um lapis', 'abra a janela agora', 'a chuva passou', 'o filho esta dormindo', 'nos vamos sair cedo'];
 
 type Aceita = (palavra: string) => boolean;
 type Modelo = (ok: Aceita) => string | null;
@@ -431,7 +448,7 @@ const M_LUGAR: Modelo = ok => {
 };
 const M_TEMPO: Modelo = ok => { const t = escolher(TEMPOS, ok), s = substantivoComArtigo(ok), v = escolher(VERBOS_I, ok); return t && s && v ? `${t} ${s.txt} ${v}` : null; };
 
-/** Mais difícil = modelos mais variados, depois duas e três orações ligadas por "e", "mas"... */
+/** Mais difÃ­cil = modelos mais variados, depois duas e trÃªs oraÃ§Ãµes ligadas por "e", "mas"... */
 function gerarFraseModelo(n: number, ok: Aceita): string | null {
   const base = n <= 1 ? [M_SIMPLES, M_ADVERBIO, M_SER, M_PRONOME] : [M_SIMPLES, M_ADVERBIO, M_SER, M_PRONOME, M_TRANSITIVO, M_LUGAR, M_TEMPO];
   const uma = () => sortear(base)(ok);
@@ -452,7 +469,7 @@ function poolFrases(n: number, letras: Set<string>): string[] {
   const ok: Aceita = w => [...w].every(c => letras.has(c));
   const fixas = FRASES_FIXAS.filter(f => [...f].every(c => c === ' ' || letras.has(c)));
   const pool = new Set<string>(fixas);
-  // frases do dia a dia emendadas ("hoje faz sol e amanha vai chover") para os níveis mais difíceis
+  // frases do dia a dia emendadas ("hoje faz sol e amanha vai chover") para os nÃ­veis mais difÃ­ceis
   if (n >= 3 && fixas.length >= 2) {
     for (let i = 0; i < 40 && ok('e'); i++) {
       const a = sortear(fixas), b = sortear(fixas);
@@ -497,7 +514,7 @@ function gerarTextoAv(n: number, etapa: number, treino?: Treino): string {
   const pool = poolFrases(n, letras).sort((a, b) => Math.abs(a.length - alvo) - Math.abs(b.length - alvo));
   if (pool.length > 0) return escolhePonderado(pool.slice(0, Math.max(qtd * 3, 6)), qtd).join(' ');
 
-  // poucas letras: ainda não dá para formar frases, usa sequências de palavras (ou de letras)
+  // poucas letras: ainda nÃ£o dÃ¡ para formar frases, usa sequÃªncias de palavras (ou de letras)
   const palavras = palavrasCom(letras);
   if (palavras.length >= 3) return escolhePonderado(palavras, qtd * 2).join(' ');
   const base = [...letras];
@@ -518,7 +535,7 @@ const rotuloPosicao = (trilha: TrilhaId, n: number, etapa: number) => {
   const v = vistaDa(trilha, n);
   const total = etapasDa(trilha, n).length;
   const e = Math.min(Math.max(etapa, 1), total);
-  return `${v ? v.titulo : `Lição ${n}`} · Etapa ${e}/${total}: ${NOME_ETAPA[tipoDaEtapa(trilha, n, e)]}`;
+  return `${v ? v.titulo : `LiÃ§Ã£o ${n}`} Â· Etapa ${e}/${total}: ${NOME_ETAPA[tipoDaEtapa(trilha, n, e)]}`;
 };
 const letrasDaEtapa = (trilha: TrilhaId, n: number, etapa: number) => (trilha === 'a' ? avLetras(n) : letrasDaEtapaL(n, etapa));
 const gerarTexto = (trilha: TrilhaId, n: number, etapa: number, treino?: Treino) =>
@@ -526,16 +543,16 @@ const gerarTexto = (trilha: TrilhaId, n: number, etapa: number, treino?: Treino)
 
 
 // ---------------------------------------------------------------------------
-// Constantes de dados (quem persiste é o lib/store.ts: Postgres ou arquivos)
+// Constantes de dados (quem persiste Ã© o lib/store.ts: Postgres ou arquivos)
 // ---------------------------------------------------------------------------
 const CORES_PERFIL = ['#6ee7ff', '#b57bff', '#4ade80', '#ffd84a', '#ff9f4a', '#ff5d7a'] as const;
 const HISTORICO_MAX = 300;
 
 type RegistroLicao = {
   data: string;
-  nivel: number; // número da lição
+  nivel: number; // nÃºmero da liÃ§Ã£o
   etapa?: number;
-  trilha?: TrilhaId; // 'a' = Avançado (ausente = lições de letras)
+  trilha?: TrilhaId; // 'a' = AvanÃ§ado (ausente = liÃ§Ãµes de letras)
   wpm: number;
   precisao: number;
   segundos: number;
@@ -549,32 +566,36 @@ type Perfil = {
   nome: string;
   cor: string;
   criadoEm: string;
-  nivel: number; // lição atual
-  etapa: number; // etapa atual dentro da lição
-  concluidaAte: number; // maior lição já concluída (a próxima está liberada)
-  fracas: Record<string, { semErro: number; peso: number }>; // teclas em treino (2+ erros); saem após 3 exercícios limpos
+  nivel: number; // liÃ§Ã£o atual
+  etapa: number; // etapa atual dentro da liÃ§Ã£o
+  concluidaAte: number; // maior liÃ§Ã£o jÃ¡ concluÃ­da (a prÃ³xima estÃ¡ liberada)
+  fracas: Record<string, { semErro: number; peso: number }>; // teclas em treino (2+ erros); saem apÃ³s 3 exercÃ­cios limpos
   fracasPares: Record<string, { semErro: number; peso: number }>; // trocas "esperada>digitada" em treino
-  trilha: TrilhaId; // trilha em que o aluno está treinando agora
-  av: { nivel: number; etapa: number; concluidaAte: number }; // progresso no Avançado
-  tentativasEtapa: number; // exercícios seguidos na etapa atual
-  perfeitosSeguidos: number; // exercícios seguidos com 100% de precisão
+  trilha: TrilhaId; // trilha em que o aluno estÃ¡ treinando agora
+  av: { nivel: number; etapa: number; concluidaAte: number }; // progresso no AvanÃ§ado
+  tentativasEtapa: number; // exercÃ­cios seguidos na etapa atual
+  perfeitosSeguidos: number; // exercÃ­cios seguidos com 100% de precisÃ£o
   historico: RegistroLicao[];
   teclas: Record<string, { t: number; e: number; m?: number; c?: number }>; // tentativas, erros e soma/contagem de tempo por tecla
 
-  // ---- painel do aluno (tudo opcional: perfis antigos são migrados em normalizarExtras) ----
-  prefs?: Prefs; // revisão de inatividade, meta do dia, preferências do jogo
+  // ---- painel do aluno (tudo opcional: perfis antigos sÃ£o migrados em normalizarExtras) ----
+  prefs?: Prefs; // revisÃ£o de inatividade, meta do dia, preferÃªncias do jogo
   recordes?: Recordes; // melhores marcas por modalidade
-  atividade?: Record<string, number>; // dia (AAAA-MM-DD) -> sessões concluídas
+  atividade?: Record<string, number>; // dia (AAAA-MM-DD) -> sessÃµes concluÃ­das
   atividadeMin?: Record<string, number>; // dia -> minutos treinados
-  testes?: ResultadoTeste[]; // histórico dos testes cronometrados (1 min e 30 s)
+  testes?: ResultadoTeste[]; // histÃ³rico dos testes cronometrados (1 min e 30 s)
   jogoHistorico?: ResultadoJogo[]; // partidas do jogo das palavras
-  conquistas?: Conquista[]; // medalhas já ganhas
-  numeros?: Record<string, NumeroResultado>; // melhor resultado em cada exercício de números e símbolos
+  conquistas?: Conquista[]; // medalhas jÃ¡ ganhas
+  numeros?: Record<string, NumeroResultado>; // melhor resultado em cada exercÃ­cio de nÃºmeros e sÃ­mbolos
   melhorCombo?: number; // recorde de acertos seguidos (persistido)
   idsProcessados?: string[]; // evita contar duas vezes um envio reenviado pela fila
+  excluidoEm?: string | null; // quando estÃ¡ na lixeira (null/ausente = ativo)
 };
 
+// perfis ativos (aparecem na lista, no ranking e nas rotas)
 let perfis: Perfil[] = [];
+// perfis na lixeira: nÃ£o aparecem em lugar nenhum, mas podem ser restaurados
+let lixeira: Perfil[] = [];
 
 function posDe(p: Perfil): Pos {
   return p.trilha === 'a' ? { trilha: 'a', nivel: p.av.nivel, etapa: p.av.etapa } : { trilha: 'l', nivel: p.nivel, etapa: p.etapa };
@@ -586,7 +607,7 @@ function definirPos(p: Perfil, pos: Pos) {
 }
 let fila: Promise<void> = Promise.resolve();
 
-/** Garante que o perfil tem os campos novos e que a posição ainda existe. */
+/** Garante que o perfil tem os campos novos e que a posiÃ§Ã£o ainda existe. */
 function ajustarPerfil(p: Perfil) {
   const total = Math.max(licoes.length, 1);
   if (!Number.isInteger(p.nivel) || p.nivel < 1) p.nivel = 1;
@@ -608,14 +629,14 @@ function ajustarPerfil(p: Perfil) {
   normalizarExtras(p);
 }
 
-/** Grava as lições avisando (em vez de derrubar) quando o banco não aceita. */
+/** Grava as liÃ§Ãµes avisando (em vez de derrubar) quando o banco nÃ£o aceita. */
 async function gravarLicoesSeguro(gravarDepois: boolean): Promise<void> {
   if (!gravarDepois) return;
   try {
     await store.gravarDados({ ...config, licoes, avLicoes });
   } catch (erro) {
     console.warn(
-      '⚠️  Banco configurado, mas não consegui gravar as lições:',
+      'âš ï¸  Banco configurado, mas nÃ£o consegui gravar as liÃ§Ãµes:',
       erro instanceof Error ? erro.message : erro,
       '\n   Se falar de "relation ... does not exist", rode o supabase/schema.sql no SQL Editor do Supabase.'
     );
@@ -627,23 +648,23 @@ async function carregarLicoes(gravarDepois = true) {
   try {
     dados = await store.lerDados();
   } catch (erro) {
-    console.warn('Não consegui ler as lições:', erro instanceof Error ? erro.message : erro);
+    console.warn('NÃ£o consegui ler as liÃ§Ãµes:', erro instanceof Error ? erro.message : erro);
     await store.copiarParaBak(store.CAMINHO_LICOES);
-    if (licoes.length) return; // mantém o que já está em memória
+    if (licoes.length) return; // mantÃ©m o que jÃ¡ estÃ¡ em memÃ³ria
     licoes = LICOES_INICIAIS.map(l => ({ ...l }));
     if (avLicoes.length === 0) avLicoes = AV_INICIAIS.map(a => ({ ...a }));
     return;
   }
 
   if (!dados) {
-    // primeira execução (ou banco vazio): cria a estrutura inicial
+    // primeira execuÃ§Ã£o (ou banco vazio): cria a estrutura inicial
     licoes = LICOES_INICIAIS.map(l => ({ ...l }));
     if (avLicoes.length === 0) avLicoes = AV_INICIAIS.map(a => ({ ...a }));
     await gravarLicoesSeguro(gravarDepois);
     return;
   }
 
-  const lista = (Array.isArray(dados) ? dados : dados.licoes) as Licao[]; // aceita o formato antigo (só a lista)
+  const lista = (Array.isArray(dados) ? dados : dados.licoes) as Licao[]; // aceita o formato antigo (sÃ³ a lista)
   if (Array.isArray(lista) && lista.length > 0) licoes = lista.sort((a, b) => a.numero - b.numero);
   else licoes = LICOES_INICIAIS.map(l => ({ ...l }));
 
@@ -651,7 +672,7 @@ async function carregarLicoes(gravarDepois = true) {
     const padrao = SchemaPontuacao.safeParse(dados.padrao);
     config = {
       modo: dados.modo === 'todas' ? 'todas' : 'manual',
-      padrao: padrao.success ? padrao.data : config.padrao,
+      padrao: padrao.success ? (padrao.data as Pontuacao) : config.padrao,
       avAutomatico: dados.avAutomatico === true
     };
     if (Array.isArray(dados.avLicoes) && dados.avLicoes.length > 0) {
@@ -665,12 +686,17 @@ async function carregarLicoes(gravarDepois = true) {
 async function carregarPerfis() {
   try {
     const dados = await store.lerPerfis();
-    perfis = Array.isArray(dados) ? (dados as Perfil[]) : [];
+    const todos = Array.isArray(dados) ? (dados as Perfil[]) : [];
+    todos.forEach(ajustarPerfil);
+    // separa ativos e lixeira: o resto do sistema sÃ³ enxerga os ativos
+    perfis = todos.filter(p => !p.excluidoEm);
+    lixeira = todos.filter(p => p.excluidoEm);
+    await limparLixeiraExpirada();
   } catch (erro) {
-    // Falha de leitura NÃO pode esvaziar a memória: se já temos perfis
-    // carregados, seguimos com eles (senão o aluno "desaparece" por 15 s).
+    // Falha de leitura NÃƒO pode esvaziar a memÃ³ria: se jÃ¡ temos perfis
+    // carregados, seguimos com eles (senÃ£o o aluno "desaparece" por 15 s).
     console.warn(
-      'Não consegui ler os perfis, mantendo os que já estavam em memória:',
+      'NÃ£o consegui ler os perfis, mantendo os que jÃ¡ estavam em memÃ³ria:',
       erro instanceof Error ? erro.message : erro
     );
     await store.copiarParaBak(store.CAMINHO_PERFIS);
@@ -678,13 +704,30 @@ async function carregarPerfis() {
   perfis.forEach(ajustarPerfil);
 }
 
-/** Grava tudo em fila: uma gravação por vez, sem correr risco de perder dados. */
+/** Apaga de vez o que passou de DIAS_LIXEIRA na lixeira (roda ao carregar). */
+async function limparLixeiraExpirada(): Promise<void> {
+  const limite = Date.now() - DIAS_LIXEIRA * 86400000;
+  const expirados = lixeira.filter(p => p.excluidoEm && new Date(p.excluidoEm).getTime() < limite);
+  if (!expirados.length) return;
+  lixeira = lixeira.filter(p => !expirados.includes(p));
+  for (const p of expirados) {
+    try {
+      await store.apagarPerfil(p.id);
+    } catch (erro) {
+      console.warn('NÃ£o consegui apagar o perfil expirado:', erro instanceof Error ? erro.message : erro);
+    }
+  }
+  await salvar();
+}
+
+/** Grava tudo em fila: uma gravaÃ§Ã£o por vez, sem correr risco de perder dados. */
 function salvar(): Promise<void> {
   fila = fila
     .then(async () => {
-      await store.sincronizarPerfis(perfis);
+      // a lixeira tambÃ©m Ã© persistida: nada se perde ao reiniciar a instÃ¢ncia
+      await store.sincronizarPerfis([...perfis, ...lixeira]);
       await store.gravarDados({ ...config, licoes, avLicoes });
-      // cópia de segurança de tempo em tempo (não trava e não bloqueia a resposta)
+      // cÃ³pia de seguranÃ§a de tempo em tempo (nÃ£o trava e nÃ£o bloqueia a resposta)
       backupRotativo().catch(() => {});
     })
     .catch(e => console.error('Erro ao salvar:', e));
@@ -700,41 +743,85 @@ app.get('/api/perfis', (_req, res) => res.json(perfis.map(resumo)));
 
 app.post('/api/perfis', async (req, res) => {
   const r = SchemaNovoPerfil.safeParse(req.body);
-  if (!r.success) return res.status(400).json({ erro: 'Nome ou cor inválidos.' });
+  if (!r.success) return res.status(400).json({ erro: 'Nome ou cor invÃ¡lidos.' });
   const p = novoPerfil(r.data.nome, r.data.cor);
   perfis.push(p);
   await salvar();
   res.status(201).json(resumo(p));
 });
 
+// ---------------------------------------------------------------------------
+// Lixeira: excluir manda o perfil para a lixeira por DIAS_LIXEIRA dias.
+// Nada Ã© apagado de verdade nesse perÃ­odo â€” dÃ¡ para restaurar.
+// ---------------------------------------------------------------------------
+const infoLixeira = (p: Perfil) => ({
+  id: p.id,
+  nome: p.nome,
+  cor: p.cor,
+  nivel: p.nivel,
+  licoes: p.historico.length,
+  excluidoEm: p.excluidoEm || null,
+  diasRestantes: p.excluidoEm
+    ? Math.max(0, DIAS_LIXEIRA - Math.floor((Date.now() - new Date(p.excluidoEm).getTime()) / 86400000))
+    : DIAS_LIXEIRA
+});
+
+app.get('/api/lixeira', (_req, res) => {
+  res.json({ dias: DIAS_LIXEIRA, total: lixeira.length, perfis: lixeira.map(infoLixeira) });
+});
+
+app.post('/api/perfil-restaurar', exigirAdmin, async (req, res) => {
+  const corpo = (req.body || {}) as Record<string, any>;
+  const id = String(corpo.perfilId || req.query.perfilId || '');
+  const i = lixeira.findIndex(p => p.id === id);
+  if (i < 0) return res.status(404).json({ erro: 'Esse perfil nÃ£o estÃ¡ na lixeira.' });
+  const [p] = lixeira.splice(i, 1);
+  p.excluidoEm = null;
+  perfis.push(p);
+  await salvar();
+  res.json({ sucesso: true, perfil: resumo(p) });
+});
+
+app.delete('/api/lixeira', exigirAdmin, async (req, res) => {
+  const id = String(req.query.id || '');
+  const i = lixeira.findIndex(p => p.id === id);
+  if (i < 0) return res.status(404).json({ erro: 'Esse perfil nÃ£o estÃ¡ na lixeira.' });
+  lixeira.splice(i, 1);
+  try {
+    await store.apagarPerfil(id);
+  } catch (erro) {
+    console.warn('NÃ£o consegui apagar de vez no banco:', erro instanceof Error ? erro.message : erro);
+  }
+  await salvar();
+  res.json({ sucesso: true });
+});
+
 app.get('/api/perfis/:id', async (req, res) => {
   let p = perfis.find(x => x.id === req.params.id);
   if (!p) {
-    // Cada instância (lambda) tem a sua memória. Se o perfil não está aqui,
-    // pode ter sido criado/alterado em outra instância: relê do banco uma vez.
+    // Cada instÃ¢ncia (lambda) tem a sua memÃ³ria. Se o perfil nÃ£o estÃ¡ aqui,
+    // pode ter sido criado/alterado em outra instÃ¢ncia: relÃª do banco uma vez.
     try {
       await carregarPerfis();
     } catch {
-      /* segue com o que já tem em memória */
+      /* segue com o que jÃ¡ tem em memÃ³ria */
     }
     p = perfis.find(x => x.id === req.params.id);
   }
-  if (!p) return res.status(404).json({ erro: 'Perfil não encontrado.' });
+  if (!p) return res.status(404).json({ erro: 'Perfil nÃ£o encontrado.' });
   ajustarPerfil(p);
   res.json(p);
 });
 
-app.delete('/api/perfis/:id', async (req, res) => {
+// Excluir NÃƒO apaga: manda para a lixeira (restaurÃ¡vel por DIAS_LIXEIRA dias).
+app.delete('/api/perfis/:id', exigirAdmin, async (req, res) => {
   const i = perfis.findIndex(x => x.id === req.params.id);
-  if (i < 0) return res.status(404).json({ erro: 'Perfil não encontrado.' });
-  perfis.splice(i, 1);
-  try {
-    await store.apagarPerfil(req.params.id);
-  } catch (erro) {
-    console.warn('Não consegui apagar o perfil no banco:', erro instanceof Error ? erro.message : erro);
-  }
+  if (i < 0) return res.status(404).json({ erro: 'Perfil nÃ£o encontrado.' });
+  const [p] = perfis.splice(i, 1);
+  p.excluidoEm = new Date().toISOString();
+  lixeira.unshift(p);
   await salvar();
-  res.json({ sucesso: true });
+  res.json({ sucesso: true, lixeira: true, dias: DIAS_LIXEIRA });
 });
 
 function treinoDo(p?: Perfil): Treino | undefined {
@@ -745,7 +832,7 @@ function treinoDo(p?: Perfil): Treino | undefined {
   };
 }
 
-/** Teclas em treino, com a informação se aparecem na etapa em que o aluno está. */
+/** Teclas em treino, com a informaÃ§Ã£o se aparecem na etapa em que o aluno estÃ¡. */
 function listaFracas(p: Perfil, pos: Pos) {
   const naEtapa = letrasDaEtapa(pos.trilha, pos.nivel, pos.etapa);
   return Object.entries(p.fracas)
@@ -774,13 +861,17 @@ function montarExercicio(pos: Pos, perfil?: Perfil) {
 app.get('/api/iniciar', async (req, res) => {
   let perfil = perfis.find(p => p.id === req.query.perfil);
   if (!perfil && req.query.perfil) {
-    // mesma proteção: instância diferente pode não ter o perfil em memória
+    // mesma proteÃ§Ã£o: instÃ¢ncia diferente pode nÃ£o ter o perfil em memÃ³ria
     try {
       await carregarPerfis();
     } catch {
-      /* segue com o que já tem */
+      /* segue com o que jÃ¡ tem */
     }
     perfil = perfis.find(p => p.id === req.query.perfil);
+  }
+  if (!perfil && req.query.perfil) {
+    // id informado e nÃ£o existe (ou estÃ¡ na lixeira): avisa em vez de cair na liÃ§Ã£o 1
+    return res.status(404).json({ erro: 'Perfil nÃ£o encontrado â€” ele pode estar na lixeira.' });
   }
   if (perfil) ajustarPerfil(perfil);
   const exercicio = montarExercicio(perfil ? posDe(perfil) : { trilha: 'l', nivel: 1, etapa: 1 }, perfil);
@@ -788,7 +879,7 @@ app.get('/api/iniciar', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// Lições: listar, criar, ajustar pontuação, excluir, escolher qual treinar
+// LiÃ§Ãµes: listar, criar, ajustar pontuaÃ§Ã£o, excluir, escolher qual treinar
 // ---------------------------------------------------------------------------
 app.get('/api/licoes', (req, res) => {
   const p = perfis.find(x => x.id === req.query.perfil);
@@ -817,10 +908,10 @@ const SchemaPontuacao = z.object({
 });
 const SchemaNovaLicao = SchemaPontuacao.partial().extend({ letras: z.string().max(40) });
 
-app.post('/api/licoes', async (req, res) => {
+app.post('/api/licoes', exigirAdmin, async (req, res) => {
   const r = SchemaNovaLicao.safeParse(req.body);
-  if (!r.success) return res.status(400).json({ erro: 'Dados inválidos.' });
-  if (licoes.length >= MAX_LICOES) return res.status(400).json({ erro: 'Limite de lições atingido.' });
+  if (!r.success) return res.status(400).json({ erro: 'Dados invÃ¡lidos.' });
+  if (licoes.length >= MAX_LICOES) return res.status(400).json({ erro: 'Limite de liÃ§Ãµes atingido.' });
 
   const letras = [...new Set(r.data.letras.toLowerCase().replace(/[\s,;.\-]+/g, ''))].join('');
   if (!/^[a-z]{2,10}$/.test(letras)) {
@@ -840,24 +931,24 @@ app.post('/api/licoes', async (req, res) => {
   res.status(201).json({ numero, etapas: etapasDa('l', numero).map(t => NOME_ETAPA[t]) });
 });
 
-app.put('/api/licoes/:n/pontuacao', async (req, res) => {
+app.put('/api/licoes/:n/pontuacao', exigirAdmin, async (req, res) => {
   const l = licaoPor(Number(req.params.n));
   const r = SchemaPontuacao.safeParse(req.body);
-  if (!l) return res.status(404).json({ erro: 'Lição não encontrada.' });
-  if (config.modo === 'todas') return res.status(400).json({ erro: 'O modo "Todas as lições" está ligado. Troque para Manual para editar uma lição.' });
-  if (!r.success) return res.status(400).json({ erro: 'Precisão de 50 a 100 e velocidade de 0 a 150.' });
+  if (!l) return res.status(404).json({ erro: 'LiÃ§Ã£o nÃ£o encontrada.' });
+  if (config.modo === 'todas') return res.status(400).json({ erro: 'O modo "Todas as liÃ§Ãµes" estÃ¡ ligado. Troque para Manual para editar uma liÃ§Ã£o.' });
+  if (!r.success) return res.status(400).json({ erro: 'PrecisÃ£o de 50 a 100 e velocidade de 0 a 150.' });
   l.precisaoMin = r.data.precisaoMin;
   l.wpmMin = r.data.wpmMin;
   await salvar();
   res.json({ sucesso: true });
 });
 
-/** Liga/desliga o modo "Todas as lições" e define o valor global (que também vale para lições novas). */
+/** Liga/desliga o modo "Todas as liÃ§Ãµes" e define o valor global (que tambÃ©m vale para liÃ§Ãµes novas). */
 const SchemaConfigPontuacao = z.object({ modo: z.enum(['todas', 'manual']), padrao: SchemaPontuacao.optional() });
-app.put('/api/config/pontuacao', async (req, res) => {
+app.put('/api/config/pontuacao', exigirAdmin, async (req, res) => {
   const r = SchemaConfigPontuacao.safeParse(req.body);
-  if (!r.success) return res.status(400).json({ erro: 'Precisão de 50 a 100 e velocidade de 0 a 150.' });
-  if (r.data.padrao) config.padrao = r.data.padrao;
+  if (!r.success) return res.status(400).json({ erro: 'PrecisÃ£o de 50 a 100 e velocidade de 0 a 150.' });
+  if (r.data.padrao) config.padrao = r.data.padrao as Pontuacao;
   config.modo = r.data.modo;
   if (config.modo === 'todas') {
     for (const l of licoes) {
@@ -869,12 +960,12 @@ app.put('/api/config/pontuacao', async (req, res) => {
   res.json({ modo: config.modo, padrao: config.padrao });
 });
 
-app.delete('/api/licoes/:n', async (req, res) => {
+app.delete('/api/licoes/:n', exigirAdmin, async (req, res) => {
   const n = Number(req.params.n);
   const l = licaoPor(n);
-  if (!l) return res.status(404).json({ erro: 'Lição não encontrada.' });
-  if (l.fixa) return res.status(400).json({ erro: 'As lições 1 a 4 não podem ser excluídas.' });
-  if (n !== licoes.length) return res.status(400).json({ erro: 'Só dá para excluir a última lição.' });
+  if (!l) return res.status(404).json({ erro: 'LiÃ§Ã£o nÃ£o encontrada.' });
+  if (l.fixa) return res.status(400).json({ erro: 'As liÃ§Ãµes 1 a 4 nÃ£o podem ser excluÃ­das.' });
+  if (n !== licoes.length) return res.status(400).json({ erro: 'SÃ³ dÃ¡ para excluir a Ãºltima liÃ§Ã£o.' });
   licoes.pop();
   perfis.forEach(ajustarPerfil);
   await salvar();
@@ -884,16 +975,16 @@ app.delete('/api/licoes/:n', async (req, res) => {
 const SchemaTreinar = z.object({ licao: z.number().int().min(1), trilha: z.enum(['l', 'a']).optional() });
 app.post('/api/perfis/:id/treinar', async (req, res) => {
   const p = perfis.find(x => x.id === req.params.id);
-  if (!p) return res.status(404).json({ erro: 'Perfil não encontrado.' });
+  if (!p) return res.status(404).json({ erro: 'Perfil nÃ£o encontrado.' });
   ajustarPerfil(p);
   const r = SchemaTreinar.safeParse(req.body);
   const trilha: TrilhaId = r.success ? (r.data.trilha ?? 'l') : 'l';
-  if (!r.success || !vistaDa(trilha, r.data.licao)) return res.status(400).json({ erro: 'Lição inválida.' });
+  if (!r.success || !vistaDa(trilha, r.data.licao)) return res.status(400).json({ erro: 'LiÃ§Ã£o invÃ¡lida.' });
   if (trilha === 'a') {
-    if (p.concluidaAte < LIBERA_AVANCADO) return res.status(400).json({ erro: `O Avançado abre depois de concluir a lição ${LIBERA_AVANCADO}.` });
-    if (r.data.licao > p.av.concluidaAte + 1) return res.status(400).json({ erro: 'Essa lição ainda está bloqueada.' });
+    if (p.concluidaAte < LIBERA_AVANCADO) return res.status(400).json({ erro: `O AvanÃ§ado abre depois de concluir a liÃ§Ã£o ${LIBERA_AVANCADO}.` });
+    if (r.data.licao > p.av.concluidaAte + 1) return res.status(400).json({ erro: 'Essa liÃ§Ã£o ainda estÃ¡ bloqueada.' });
   } else if (r.data.licao > p.concluidaAte + 1) {
-    return res.status(400).json({ erro: 'Essa lição ainda está bloqueada.' });
+    return res.status(400).json({ erro: 'Essa liÃ§Ã£o ainda estÃ¡ bloqueada.' });
   }
   definirPos(p, { trilha, nivel: r.data.licao, etapa: 1 });
   p.tentativasEtapa = 0;
@@ -903,10 +994,10 @@ app.post('/api/perfis/:id/treinar', async (req, res) => {
 
 app.post('/api/perfis/:id/voltar-etapa', async (req, res) => {
   const p = perfis.find(x => x.id === req.params.id);
-  if (!p) return res.status(404).json({ erro: 'Perfil não encontrado.' });
+  if (!p) return res.status(404).json({ erro: 'Perfil nÃ£o encontrado.' });
   ajustarPerfil(p);
   const ant = posicaoAnterior(posDe(p));
-  if (!ant) return res.status(400).json({ erro: 'Não há etapa anterior.' });
+  if (!ant) return res.status(400).json({ erro: 'NÃ£o hÃ¡ etapa anterior.' });
   definirPos(p, ant);
   p.tentativasEtapa = 0;
   ajustarPerfil(p);
@@ -915,7 +1006,7 @@ app.post('/api/perfis/:id/voltar-etapa', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// Avançado: abre depois da lição 5; lições criadas pelo sistema (ou manualmente)
+// AvanÃ§ado: abre depois da liÃ§Ã£o 5; liÃ§Ãµes criadas pelo sistema (ou manualmente)
 // ---------------------------------------------------------------------------
 function statusAv(p: Perfil | undefined, n: number): 'concluida' | 'andamento' | 'bloqueada' {
   if (!p || p.concluidaAte < LIBERA_AVANCADO) return 'bloqueada';
@@ -944,27 +1035,27 @@ app.get('/api/avancado', (req, res) => {
   });
 });
 
-app.put('/api/avancado/automatico', async (req, res) => {
+app.put('/api/avancado/automatico', exigirAdmin, async (req, res) => {
   const r = z.object({ automatico: z.boolean() }).safeParse(req.body);
-  if (!r.success) return res.status(400).json({ erro: 'Dados inválidos.' });
+  if (!r.success) return res.status(400).json({ erro: 'Dados invÃ¡lidos.' });
   config.avAutomatico = r.data.automatico;
   await salvar();
   res.json({ automatico: config.avAutomatico });
 });
 
-app.post('/api/avancado/licoes', async (_req, res) => {
-  if (avLicoes.length >= MAX_LICOES) return res.status(400).json({ erro: 'Limite de lições atingido.' });
+app.post('/api/avancado/licoes', exigirAdmin, async (_req, res) => {
+  if (avLicoes.length >= MAX_LICOES) return res.status(400).json({ erro: 'Limite de liÃ§Ãµes atingido.' });
   const nova = novaAvLicao(false);
   avLicoes.push(nova);
   await salvar();
   res.status(201).json({ numero: nova.numero });
 });
 
-app.put('/api/avancado/licoes/:n/pontuacao', async (req, res) => {
+app.put('/api/avancado/licoes/:n/pontuacao', exigirAdmin, async (req, res) => {
   const a = avLicoes.find(x => x.numero === Number(req.params.n));
   const r = SchemaPontuacao.safeParse(req.body);
-  if (!a) return res.status(404).json({ erro: 'Lição não encontrada.' });
-  if (!r.success) return res.status(400).json({ erro: 'Precisão de 50 a 100 e velocidade de 0 a 150.' });
+  if (!a) return res.status(404).json({ erro: 'LiÃ§Ã£o nÃ£o encontrada.' });
+  if (!r.success) return res.status(400).json({ erro: 'PrecisÃ£o de 50 a 100 e velocidade de 0 a 150.' });
   a.precisaoMin = r.data.precisaoMin;
   a.wpmMin = r.data.wpmMin;
   await salvar();
@@ -983,7 +1074,7 @@ const SchemaEvento = z.object({
 
 const SchemaSubmissao = z.object({
   perfilId: z.string(),
-  nivelAtual: z.number().int().optional(), // ignorado: vale a posição salva no servidor
+  nivelAtual: z.number().int().optional(), // ignorado: vale a posiÃ§Ã£o salva no servidor
   tempoTotalSegundos: z.number(),
   comboMax: z.number().int().min(0).max(100000).optional(),
   id: z.string().max(64).optional(), // identificador do envio (evita contar duas vezes)
@@ -991,7 +1082,7 @@ const SchemaSubmissao = z.object({
 });
 
 // ---------------------------------------------------------------------------
-// Análise por tecla (conta exata, feita no código)
+// AnÃ¡lise por tecla (conta exata, feita no cÃ³digo)
 // ---------------------------------------------------------------------------
 type StatTecla = { tecla: string; tentativas: number; erros: number; tempoMedioMs: number };
 
@@ -1005,7 +1096,7 @@ function analisarTeclas(eventos: z.infer<typeof SchemaEvento>[]): StatTecla[] {
     s.tentativas++;
     if (!e.correta) s.erros++;
     if (i > 0) {
-      // o primeiro evento não tem tempo válido (relógio começa nele)
+      // o primeiro evento nÃ£o tem tempo vÃ¡lido (relÃ³gio comeÃ§a nele)
       s.somaTempo += e.tempoMs;
       s.contTempo++;
     }
@@ -1020,7 +1111,7 @@ function analisarTeclas(eventos: z.infer<typeof SchemaEvento>[]): StatTecla[] {
   }));
 }
 
-/** Tecla fraca = mais erros; empate → a mais lenta. Sem erros, não há tecla fraca. */
+/** Tecla fraca = mais erros; empate â†’ a mais lenta. Sem erros, nÃ£o hÃ¡ tecla fraca. */
 function acharTeclaFraca(stats: StatTecla[]): string | null {
   const comErro = stats.filter(s => s.erros > 0);
   if (comErro.length === 0) return null;
@@ -1028,7 +1119,7 @@ function acharTeclaFraca(stats: StatTecla[]): string | null {
   return comErro[0].tecla;
 }
 
-/** Conta as trocas "esperada>digitada" (ex: "ç>l" quando digitou L no lugar de Ç). */
+/** Conta as trocas "esperada>digitada" (ex: "Ã§>l" quando digitou L no lugar de Ã‡). */
 function contarPares(eventos: z.infer<typeof SchemaEvento>[]): Record<string, number> {
   const m: Record<string, number> = {};
   for (const e of eventos) {
@@ -1043,7 +1134,7 @@ function contarPares(eventos: z.infer<typeof SchemaEvento>[]): Record<string, nu
 
 /**
  * Teclas com 2+ erros entram (ou ficam) na lista de treino; saem depois de
- * 3 exercícios seguidos sem erro nelas. Só conta quando a tecla apareceu no exercício.
+ * 3 exercÃ­cios seguidos sem erro nelas. SÃ³ conta quando a tecla apareceu no exercÃ­cio.
  * Os pares confundidos seguem a mesma regra.
  */
 function atualizarFracas(p: Perfil, stats: StatTecla[], pares: Record<string, number>) {
@@ -1078,7 +1169,7 @@ function atualizarFracas(p: Perfil, stats: StatTecla[], pares: Record<string, nu
 }
 
 // ---------------------------------------------------------------------------
-// Jev (TypeSafe AI): decisões tipadas
+// Jev (TypeSafe AI): decisÃµes tipadas
 // ---------------------------------------------------------------------------
 type Acao = 'avancar' | 'repetir' | 'reforcar' | 'voltar';
 
@@ -1104,7 +1195,7 @@ type DecisaoJev = {
 
 type ContextoLicao = {
   trilha: TrilhaId;
-  nivel: number; // número da lição
+  nivel: number; // nÃºmero da liÃ§Ã£o
   etapa: number;
   precisao: number;
   wpm: number;
@@ -1116,7 +1207,7 @@ type ContextoLicao = {
   wpmMin: number;
   fracas: { tecla: string; peso: number; semErro: number }[]; // teclas em treino que aparecem nesta etapa
   pares: string[]; // trocas em treino
-  tentativas: number; // exercícios seguidos nesta etapa (contando este)
+  tentativas: number; // exercÃ­cios seguidos nesta etapa (contando este)
 };
 
 const listar = (teclas: string[]) => {
@@ -1133,23 +1224,23 @@ function montarEstado(c: ContextoLicao): string {
       .map(s => `${s.tecla}=${s.erros}`)
       .join(', ') || 'nenhum';
   const l = licaoPor(c.nivel);
-  const letras = c.trilha === 'a' ? `todas as já aprendidas (${avEscopoTexto(c.nivel)}), em palavras e frases do dia a dia` : l ? [...l.letras].join(' ') : '-';
+  const letras = c.trilha === 'a' ? `todas as jÃ¡ aprendidas (${avEscopoTexto(c.nivel)}), em palavras e frases do dia a dia` : l ? [...l.letras].join(' ') : '-';
 
   return [
-    `Aluno de um curso de digitação (touch typing), na ${rotuloPosicao(c.trilha, c.nivel, c.etapa)}. Letras: ${letras}.`,
-    `Meta definida pelo professor para passar de etapa: precisão mínima ${c.precisaoMin}% e ${c.wpmMin} palavras por minuto.`,
-    `Resultado do último exercício: precisão ${c.precisao}%, ${c.wpm} palavras por minuto, ${c.acertos} acertos e ${erros} erros em ${c.total} teclas digitadas.`,
-    `Tempo médio por tecla: ${tempos || 'indisponível'}.`,
+    `Aluno de um curso de digitaÃ§Ã£o (touch typing), na ${rotuloPosicao(c.trilha, c.nivel, c.etapa)}. Letras: ${letras}.`,
+    `Meta definida pelo professor para passar de etapa: precisÃ£o mÃ­nima ${c.precisaoMin}% e ${c.wpmMin} palavras por minuto.`,
+    `Resultado do Ãºltimo exercÃ­cio: precisÃ£o ${c.precisao}%, ${c.wpm} palavras por minuto, ${c.acertos} acertos e ${erros} erros em ${c.total} teclas digitadas.`,
+    `Tempo mÃ©dio por tecla: ${tempos || 'indisponÃ­vel'}.`,
     `Erros por tecla: ${errosPorTecla}.`,
     `Tecla com mais erros: ${c.teclaFraca ?? 'nenhuma'}.`,
-    `Teclas em treino (2+ erros; saem após 3 exercícios seguidos sem erro): ${c.fracas.map(f => `${f.tecla}=${f.peso} erros, ${f.semErro}/3 limpos`).join('; ') || 'nenhuma'}.`,
+    `Teclas em treino (2+ erros; saem apÃ³s 3 exercÃ­cios seguidos sem erro): ${c.fracas.map(f => `${f.tecla}=${f.peso} erros, ${f.semErro}/3 limpos`).join('; ') || 'nenhuma'}.`,
     `Trocas de teclas em treino: ${c.pares.map(p => p.replace('>', ' no lugar de ')).join('; ') || 'nenhuma'}.`,
-    `Exercícios seguidos nesta etapa: ${c.tentativas}.`
+    `ExercÃ­cios seguidos nesta etapa: ${c.tentativas}.`
   ].join('\n');
 }
 
 async function consultarJev(c: ContextoLicao): Promise<DecisaoJev> {
-  if (!JEV_API_KEY) throw new Error('JEV_API_KEY não configurada');
+  if (!JEV_API_KEY) throw new Error('JEV_API_KEY nÃ£o configurada');
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), JEV_TIMEOUT_MS);
@@ -1168,15 +1259,15 @@ async function consultarJev(c: ContextoLicao): Promise<DecisaoJev> {
         questions: {
           domina: {
             type: 'noul',
-            instructions: 'O aluno domina esta etapa: digita com precisão e ritmo bons o bastante para passar à próxima?'
+            instructions: 'O aluno domina esta etapa: digita com precisÃ£o e ritmo bons o bastante para passar Ã  prÃ³xima?'
           },
           dificuldade: {
             type: 'noul',
-            instructions: 'O aluno teve muita dificuldade neste exercício: muitos erros e hesitação, a ponto de precisar voltar à etapa anterior?'
+            instructions: 'O aluno teve muita dificuldade neste exercÃ­cio: muitos erros e hesitaÃ§Ã£o, a ponto de precisar voltar Ã  etapa anterior?'
           },
           fluencia: {
             type: 'score',
-            instructions: 'Quão fluente é a digitação do aluno neste exercício?',
+            instructions: 'QuÃ£o fluente Ã© a digitaÃ§Ã£o do aluno neste exercÃ­cio?',
             criteria: [
               'Hesitante: lento, com pausas e erros',
               'Regular: ritmo irregular ou velocidade baixa',
@@ -1201,13 +1292,13 @@ async function consultarJev(c: ContextoLicao): Promise<DecisaoJev> {
 }
 
 // ---------------------------------------------------------------------------
-// Decisão final (as respostas do Jev são combinadas aqui, no código)
-// A meta de pontuação da lição (definida por você) é um piso: o Jev nunca
+// DecisÃ£o final (as respostas do Jev sÃ£o combinadas aqui, no cÃ³digo)
+// A meta de pontuaÃ§Ã£o da liÃ§Ã£o (definida por vocÃª) Ã© um piso: o Jev nunca
 // libera quem ficou abaixo dela, mas pode segurar quem passou nela.
 // ---------------------------------------------------------------------------
 type Veredito = {
   acao: Acao;
-  motivo: string; // mensagem usada quando NÃO avança
+  motivo: string; // mensagem usada quando NÃƒO avanÃ§a
   decididoPor: 'jev' | 'regra';
   confianca: number | null;
   fluencia: number | null;
@@ -1227,7 +1318,7 @@ type Decisao = {
 
 const certeza = (p: number) => Math.abs(p - 0.5) * 2;
 const atingiuMeta = (c: ContextoLicao) => c.precisao >= c.precisaoMin && c.wpm >= c.wpmMin;
-/** Passa de etapa só com a meta batida E sem teclas em treino nesta etapa. */
+/** Passa de etapa sÃ³ com a meta batida E sem teclas em treino nesta etapa. */
 const passou = (c: ContextoLicao) => atingiuMeta(c) && c.fracas.length === 0;
 
 function proximaPosicao(p: Pos): Pos | null {
@@ -1244,13 +1335,13 @@ function posicaoAnterior(p: Pos): Pos | null {
 function motivoPasso(c: ContextoLicao): string {
   const teclas = listar(c.fracas.map(f => f.tecla));
   if (atingiuMeta(c)) {
-    return `Meta batida, mas ainda há teclas em treino: ${teclas}. Cada uma precisa de 3 exercícios seguidos sem erro (${c.fracas.map(f => `${f.tecla.toUpperCase()} ${f.semErro}/3`).join(', ')}).`;
+    return `Meta batida, mas ainda hÃ¡ teclas em treino: ${teclas}. Cada uma precisa de 3 exercÃ­cios seguidos sem erro (${c.fracas.map(f => `${f.tecla.toUpperCase()} ${f.semErro}/3`).join(', ')}).`;
   }
   const faltas: string[] = [];
-  if (c.precisao < c.precisaoMin) faltas.push(`precisão ${c.precisao}% (meta ${c.precisaoMin}%)`);
+  if (c.precisao < c.precisaoMin) faltas.push(`precisÃ£o ${c.precisao}% (meta ${c.precisaoMin}%)`);
   if (c.wpm < c.wpmMin) faltas.push(`velocidade ${c.wpm} palavras por minuto (meta ${c.wpmMin})`);
-  const extra = c.fracas.length ? ` Treine também ${teclas}.` : '';
-  return `Ainda falta chegar na meta: ${faltas.join(' e ')}.${extra} Vamos praticar mais uma sequência.`;
+  const extra = c.fracas.length ? ` Treine tambÃ©m ${teclas}.` : '';
+  return `Ainda falta chegar na meta: ${faltas.join(' e ')}.${extra} Vamos praticar mais uma sequÃªncia.`;
 }
 
 function decidirPorRegra(c: ContextoLicao): Veredito {
@@ -1259,17 +1350,17 @@ function decidirPorRegra(c: ContextoLicao): Veredito {
   return { ...base, acao: 'repetir', motivo: motivoPasso(c) };
 }
 
-/** Combina as respostas do Jev. Devolve null quando o Jev não tem certeza. */
+/** Combina as respostas do Jev. Devolve null quando o Jev nÃ£o tem certeza. */
 function combinarJev(c: ContextoLicao, j: DecisaoJev): Veredito | null {
   const base = { decididoPor: 'jev' as const, fluencia: j.fluencia };
   const meta = passou(c);
 
-  // 1) Muita dificuldade e abaixo da meta → voltar (só se existir etapa anterior)
+  // 1) Muita dificuldade e abaixo da meta â†’ voltar (sÃ³ se existir etapa anterior)
   if (j.dificuldade >= LIMIAR_DIFICULDADE && !atingiuMeta(c) && posicaoAnterior({ trilha: c.trilha, nivel: c.nivel, etapa: c.etapa })) {
     return { ...base, acao: 'voltar', confianca: certeza(j.dificuldade), motivo: '' };
   }
 
-  // 2) Domínio com certeza suficiente
+  // 2) DomÃ­nio com certeza suficiente
   if (certeza(j.domina) >= CERTEZA_MINIMA) {
     const confianca = certeza(j.domina);
     const domina = j.domina > 0.5;
@@ -1278,15 +1369,15 @@ function combinarJev(c: ContextoLicao, j: DecisaoJev): Veredito | null {
     if (domina && !meta) return { ...base, acao: 'repetir', confianca, motivo: motivoPasso(c) };
     const alvo = c.fracas.length ? c.fracas.map(f => f.tecla) : c.teclaFraca ? [c.teclaFraca] : [];
     if (alvo.length) {
-      return { ...base, acao: 'reforcar', confianca, motivo: `Vamos treinar mais: ${listar(alvo)}, onde você mais errou.` };
+      return { ...base, acao: 'reforcar', confianca, motivo: `Vamos treinar mais: ${listar(alvo)}, onde vocÃª mais errou.` };
     }
-    return { ...base, acao: 'repetir', confianca, motivo: 'Bom trabalho! Mais uma sequência para fixar.' };
+    return { ...base, acao: 'repetir', confianca, motivo: 'Bom trabalho! Mais uma sequÃªncia para fixar.' };
   }
 
-  return null; // Jev em dúvida
+  return null; // Jev em dÃºvida
 }
 
-/** Transforma o veredito (avançar, repetir...) na posição seguinte e na mensagem. */
+/** Transforma o veredito (avanÃ§ar, repetir...) na posiÃ§Ã£o seguinte e na mensagem. */
 function resolver(c: ContextoLicao, v: Veredito): Decisao {
   const aqui: Pos = { trilha: c.trilha, nivel: c.nivel, etapa: c.etapa };
   let pos = aqui;
@@ -1301,20 +1392,20 @@ function resolver(c: ContextoLicao, v: Veredito): Decisao {
       concluiuLicao = true;
       concluiuTudo = true;
       mensagem = c.trilha === 'a'
-        ? 'Parabéns! Você concluiu todas as lições avançadas disponíveis. Ligue "Adicionar automaticamente" ou adicione uma nova na aba Avançado.'
-        : 'Parabéns! Você concluiu todas as lições disponíveis. Crie uma nova na aba Lições para continuar.';
+        ? 'ParabÃ©ns! VocÃª concluiu todas as liÃ§Ãµes avanÃ§adas disponÃ­veis. Ligue "Adicionar automaticamente" ou adicione uma nova na aba AvanÃ§ado.'
+        : 'ParabÃ©ns! VocÃª concluiu todas as liÃ§Ãµes disponÃ­veis. Crie uma nova na aba LiÃ§Ãµes para continuar.';
     } else {
       pos = prox;
       concluiuLicao = prox.nivel !== aqui.nivel;
       mensagem = concluiuLicao
-        ? `Lição concluída! Avançou para ${vistaDa(prox.trilha, prox.nivel)?.titulo ?? 'a próxima lição'}`
-        : `Excelente! Próxima etapa: ${NOME_ETAPA[tipoDaEtapa(prox.trilha, prox.nivel, prox.etapa)]}`;
+        ? `LiÃ§Ã£o concluÃ­da! AvanÃ§ou para ${vistaDa(prox.trilha, prox.nivel)?.titulo ?? 'a prÃ³xima liÃ§Ã£o'}`
+        : `Excelente! PrÃ³xima etapa: ${NOME_ETAPA[tipoDaEtapa(prox.trilha, prox.nivel, prox.etapa)]}`;
     }
   } else if (acao === 'voltar') {
     const ant = posicaoAnterior(aqui);
     if (ant) {
       pos = ant;
-      mensagem = `Vamos reforçar a base: voltando para ${rotuloPosicao(ant.trilha, ant.nivel, ant.etapa)}`;
+      mensagem = `Vamos reforÃ§ar a base: voltando para ${rotuloPosicao(ant.trilha, ant.nivel, ant.etapa)}`;
     } else {
       acao = 'repetir';
     }
@@ -1330,40 +1421,40 @@ async function decidir(c: ContextoLicao): Promise<Decisao> {
   try {
     const jev = await consultarJev(c);
     const v = combinarJev(c, jev);
-    const resumoJev = `domina=${jev.domina.toFixed(2)} dificuldade=${jev.dificuldade.toFixed(2)} fluência=${jev.fluencia.toFixed(2)}`;
+    const resumoJev = `domina=${jev.domina.toFixed(2)} dificuldade=${jev.dificuldade.toFixed(2)} fluÃªncia=${jev.fluencia.toFixed(2)}`;
     if (!v) {
-      console.log(`[Jev] ${resumoJev} → sem certeza, usando regra fixa`);
+      console.log(`[Jev] ${resumoJev} â†’ sem certeza, usando regra fixa`);
       return resolver(c, decidirPorRegra(c));
     }
     const d = resolver(c, v);
-    console.log(`[Jev] ${resumoJev} → ação=${d.acao} (certeza ${v.confianca?.toFixed(2)}) → lição ${d.proximoNivel} etapa ${d.proximaEtapa}`);
+    console.log(`[Jev] ${resumoJev} â†’ aÃ§Ã£o=${d.acao} (certeza ${v.confianca?.toFixed(2)}) â†’ liÃ§Ã£o ${d.proximoNivel} etapa ${d.proximaEtapa}`);
     return d;
   } catch (erro) {
-    console.warn('[Jev] indisponível, usando regra fixa:', erro instanceof Error ? erro.message : erro);
+    console.warn('[Jev] indisponÃ­vel, usando regra fixa:', erro instanceof Error ? erro.message : erro);
     return resolver(c, decidirPorRegra(c));
   }
 }
 
 // ---------------------------------------------------------------------------
-// Avaliação do exercício
+// AvaliaÃ§Ã£o do exercÃ­cio
 // ---------------------------------------------------------------------------
 app.post('/api/avaliar-licao', async (req, res) => {
   const parsed = SchemaSubmissao.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ erro: 'Dados enviados inválidos.' });
+    return res.status(400).json({ erro: 'Dados enviados invÃ¡lidos.' });
   }
   const dados = parsed.data;
   const perfil = perfis.find(p => p.id === dados.perfilId);
-  if (!perfil) return res.status(404).json({ erro: 'Perfil não encontrado.' });
+  if (!perfil) return res.status(404).json({ erro: 'Perfil nÃ£o encontrado.' });
   ajustarPerfil(perfil);
   const aqui = posDe(perfil);
 
-  // Avançado em modo automático: garante que existe uma lição depois da última, antes de decidir
+  // AvanÃ§ado em modo automÃ¡tico: garante que existe uma liÃ§Ã£o depois da Ãºltima, antes de decidir
   if (aqui.trilha === 'a' && config.avAutomatico && aqui.nivel === avLicoes.length && avLicoes.length < MAX_LICOES) {
     avLicoes.push(novaAvLicao(true));
   }
   const licao = vistaDa(aqui.trilha, aqui.nivel);
-  if (!licao) return res.status(500).json({ erro: 'Lição atual não encontrada.' });
+  if (!licao) return res.status(500).json({ erro: 'LiÃ§Ã£o atual nÃ£o encontrada.' });
 
   const acertos = dados.eventosTeclas.filter(e => e.correta).length;
   const total = dados.eventosTeclas.length;
@@ -1374,7 +1465,7 @@ app.post('/api/avaliar-licao', async (req, res) => {
   const stats = analisarTeclas(dados.eventosTeclas);
   const teclaFraca = acharTeclaFraca(stats);
 
-  // Reenvio da fila local (servidor caiu no meio): não conta duas vezes
+  // Reenvio da fila local (servidor caiu no meio): nÃ£o conta duas vezes
   if (jaProcessado(perfil, dados.id)) {
     const posDup = posDe(perfil);
     const proxDup = montarExercicio(posDup, perfil);
@@ -1385,7 +1476,7 @@ app.post('/api/avaliar-licao', async (req, res) => {
       relatorio: {
         wpm,
         precisao,
-        mensagemFeedback: 'Este exercício já tinha sido registrado. Continuando de onde você parou.',
+        mensagemFeedback: 'Este exercÃ­cio jÃ¡ tinha sido registrado. Continuando de onde vocÃª parou.',
         proximoNivel: proxDup.nivel,
         proximaEtapa: proxDup.etapa,
         trilha: proxDup.trilha,
@@ -1410,7 +1501,7 @@ app.post('/api/avaliar-licao', async (req, res) => {
     });
   }
 
-  // Atualiza a lista de teclas em treino ANTES de decidir (a tecla pode sair da lista neste exercício)
+  // Atualiza a lista de teclas em treino ANTES de decidir (a tecla pode sair da lista neste exercÃ­cio)
   atualizarFracas(perfil, stats, contarPares(dados.eventosTeclas));
   const fracasAqui = listaFracas(perfil, aqui).filter(f => f.nestaEtapa);
   const naEtapa = letrasDaEtapa(aqui.trilha, aqui.nivel, aqui.etapa);
@@ -1466,7 +1557,7 @@ app.post('/api/avaliar-licao', async (req, res) => {
   const posAgora = posDe(perfil);
   const proximo = montarExercicio(posAgora, perfil);
 
-  // Travou? Depois de muitos exercícios na mesma etapa, sugere voltar uma etapa e rever o dedo da tecla
+  // Travou? Depois de muitos exercÃ­cios na mesma etapa, sugere voltar uma etapa e rever o dedo da tecla
   let sugestao: { tentativas: number; tecla: string | null } | null = null;
   if (!mudouDeEtapa && decisao.acao !== 'avancar' && perfil.tentativasEtapa >= TETO_TENTATIVAS && posicaoAnterior(posAgora)) {
     sugestao = { tentativas: perfil.tentativasEtapa, tecla: proximo.fracas[0]?.tecla ?? teclaFraca };
@@ -1504,9 +1595,9 @@ app.post('/api/avaliar-licao', async (req, res) => {
 
 // ===========================================================================
 // PAINEL DO ALUNO
-// Ofensiva (dias seguidos), meta do dia, revisão de inatividade, recordes,
+// Ofensiva (dias seguidos), meta do dia, revisÃ£o de inatividade, recordes,
 // conquistas, testes cronometrados, jogo das palavras, ranking e backups.
-// Tudo em cima do mesmo perfis.json — nenhuma dependência nova.
+// Tudo em cima do mesmo perfis.json â€” nenhuma dependÃªncia nova.
 // ===========================================================================
 
 const MIN_LICOES_RANKING = 3; // abaixo disso o perfil aparece como "calibrando"
@@ -1517,7 +1608,7 @@ const BACKUP_INTERVALO_MS = 10 * 60 * 1000;
 
 type MetaDia = { tipo: 'sessoes' | 'minutos'; valor: number };
 type Prefs = {
-  diasRevisao: number; // dias sem treinar que disparam a revisão
+  diasRevisao: number; // dias sem treinar que disparam a revisÃ£o
   metaDia: MetaDia;
   jogoTamanho: 'normal' | 'grande';
   reduzirMovimento: boolean;
@@ -1561,24 +1652,24 @@ const RECORDES_ZERADOS: Recordes = {
 };
 
 const CATALOGO_CONQUISTAS: { id: string; nome: string; desc: string; icone: string }[] = [
-  { id: 'primeiro-100', nome: 'Primeiro perfeito', desc: 'Um exercício com 100% de precisão.', icone: '🎯' },
-  { id: 'wpm-20', nome: '20 palavras por minuto', desc: 'Alcançou 20 palavras por minuto numa lição.', icone: '🚀' },
-  { id: 'wpm-30', nome: '30 palavras por minuto', desc: 'Alcançou 30 palavras por minuto numa lição.', icone: '🚀' },
-  { id: 'wpm-40', nome: '40 palavras por minuto', desc: 'Alcançou 40 palavras por minuto numa lição.', icone: '⚡' },
-  { id: 'wpm-50', nome: '50 palavras por minuto', desc: 'Alcançou 50 palavras por minuto numa lição.', icone: '⚡' },
-  { id: 'wpm-60', nome: '60 palavras por minuto', desc: 'Alcançou 60 palavras por minuto numa lição.', icone: '🏆' },
-  { id: 'ofensiva-3', nome: 'Três dias seguidos', desc: 'Treinou 3 dias consecutivos.', icone: '🔥' },
-  { id: 'ofensiva-7', nome: 'Uma semana inteira', desc: 'Treinou 7 dias consecutivos.', icone: '🔥' },
-  { id: 'ofensiva-30', nome: 'Um mês de constância', desc: 'Treinou 30 dias consecutivos.', icone: '🏅' },
-  { id: 'mil-teclas', nome: 'Mil teclas', desc: 'Digitou 1000 teclas no curso.', icone: '⌨️' },
-  { id: 'teste-1min', nome: 'Teste de 1 minuto', desc: 'Concluiu o teste de 1 minuto.', icone: '⏱️' },
-  { id: 'teste-40', nome: '40 no teste', desc: 'Fez 40 palavras por minuto no teste cronometrado.', icone: '⏱️' },
-  { id: 'corrida-30s', nome: 'Corrida de 30 segundos', desc: 'Correu contra o próprio recorde.', icone: '🏁' },
-  { id: 'jogo-estreia', nome: 'Primeira defesa', desc: 'Jogou uma partida do jogo das palavras.', icone: '🛡️' },
-  { id: 'jogo-onda-5', nome: 'Onda 5', desc: 'Chegou à onda 5 no jogo.', icone: '🌊' },
-  { id: 'jogo-combo-20', nome: 'Combo 20 no jogo', desc: 'Fez 20 acertos seguidos no jogo.', icone: '💥' },
-  { id: 'avancado-liberado', nome: 'Avançado liberado', desc: 'Concluiu a lição que abre o Avançado.', icone: '🎓' },
-  { id: 'dez-licoes', nome: 'Dez lições', desc: 'Concluiu 10 lições de letras.', icone: '📚' }
+  { id: 'primeiro-100', nome: 'Primeiro perfeito', desc: 'Um exercÃ­cio com 100% de precisÃ£o.', icone: 'ðŸŽ¯' },
+  { id: 'wpm-20', nome: '20 palavras por minuto', desc: 'AlcanÃ§ou 20 palavras por minuto numa liÃ§Ã£o.', icone: 'ðŸš€' },
+  { id: 'wpm-30', nome: '30 palavras por minuto', desc: 'AlcanÃ§ou 30 palavras por minuto numa liÃ§Ã£o.', icone: 'ðŸš€' },
+  { id: 'wpm-40', nome: '40 palavras por minuto', desc: 'AlcanÃ§ou 40 palavras por minuto numa liÃ§Ã£o.', icone: 'âš¡' },
+  { id: 'wpm-50', nome: '50 palavras por minuto', desc: 'AlcanÃ§ou 50 palavras por minuto numa liÃ§Ã£o.', icone: 'âš¡' },
+  { id: 'wpm-60', nome: '60 palavras por minuto', desc: 'AlcanÃ§ou 60 palavras por minuto numa liÃ§Ã£o.', icone: 'ðŸ†' },
+  { id: 'ofensiva-3', nome: 'TrÃªs dias seguidos', desc: 'Treinou 3 dias consecutivos.', icone: 'ðŸ”¥' },
+  { id: 'ofensiva-7', nome: 'Uma semana inteira', desc: 'Treinou 7 dias consecutivos.', icone: 'ðŸ”¥' },
+  { id: 'ofensiva-30', nome: 'Um mÃªs de constÃ¢ncia', desc: 'Treinou 30 dias consecutivos.', icone: 'ðŸ…' },
+  { id: 'mil-teclas', nome: 'Mil teclas', desc: 'Digitou 1000 teclas no curso.', icone: 'âŒ¨ï¸' },
+  { id: 'teste-1min', nome: 'Teste de 1 minuto', desc: 'Concluiu o teste de 1 minuto.', icone: 'â±ï¸' },
+  { id: 'teste-40', nome: '40 no teste', desc: 'Fez 40 palavras por minuto no teste cronometrado.', icone: 'â±ï¸' },
+  { id: 'corrida-30s', nome: 'Corrida de 30 segundos', desc: 'Correu contra o prÃ³prio recorde.', icone: 'ðŸ' },
+  { id: 'jogo-estreia', nome: 'Primeira defesa', desc: 'Jogou uma partida do jogo das palavras.', icone: 'ðŸ›¡ï¸' },
+  { id: 'jogo-onda-5', nome: 'Onda 5', desc: 'Chegou Ã  onda 5 no jogo.', icone: 'ðŸŒŠ' },
+  { id: 'jogo-combo-20', nome: 'Combo 20 no jogo', desc: 'Fez 20 acertos seguidos no jogo.', icone: 'ðŸ’¥' },
+  { id: 'avancado-liberado', nome: 'AvanÃ§ado liberado', desc: 'Concluiu a liÃ§Ã£o que abre o AvanÃ§ado.', icone: 'ðŸŽ“' },
+  { id: 'dez-licoes', nome: 'Dez liÃ§Ãµes', desc: 'Concluiu 10 liÃ§Ãµes de letras.', icone: 'ðŸ“š' }
 ];
 
 const num = (v: unknown, def: number, min: number, max: number): number => {
@@ -1596,6 +1687,11 @@ const objeto = (v: unknown): Record<string, any> | null =>
 
 /** Completa e saneia os campos novos de qualquer perfil (inclusive os antigos). */
 function normalizarExtras(p: Perfil) {
+  // lixeira: guarda a data sÃ³ se for vÃ¡lida; qualquer outra coisa = ativo
+  p.excluidoEm = typeof p.excluidoEm === 'string' && !Number.isNaN(new Date(p.excluidoEm).getTime())
+    ? p.excluidoEm
+    : null;
+
   const prefs = objeto(p.prefs) ?? {};
   const meta = objeto(prefs.metaDia) ?? {};
   p.prefs = {
@@ -1649,7 +1745,7 @@ function normalizarExtras(p: Perfil) {
   p.idsProcessados = Array.isArray(p.idsProcessados) ? p.idsProcessados.slice(-IDS_PROCESSADOS_MAX) : [];
 }
 
-/** Cria um perfil completo já com todos os campos novos. */
+/** Cria um perfil completo jÃ¡ com todos os campos novos. */
 function novoPerfil(nome: string, cor: string): Perfil {
   return {
     id: randomUUID(),
@@ -1680,7 +1776,7 @@ function novoPerfil(nome: string, cor: string): Perfil {
   };
 }
 
-/** Sequência atual e recorde de dias treinados. */
+/** SequÃªncia atual e recorde de dias treinados. */
 function calcularOfensiva(p: Perfil): { atual: number; recorde: number; ultimo: string | null } {
   const dias = Object.keys(p.atividade ?? {}).filter(d => (p.atividade![d] ?? 0) > 0).sort();
   if (!dias.length) return { atual: 0, recorde: 0, ultimo: null };
@@ -1711,7 +1807,7 @@ function calcularOfensiva(p: Perfil): { atual: number; recorde: number; ultimo: 
   return { atual, recorde, ultimo: dias[dias.length - 1] };
 }
 
-/** Dias sem treinar e se já passou do limite escolhido pelo aluno. */
+/** Dias sem treinar e se jÃ¡ passou do limite escolhido pelo aluno. */
 function revisaoDe(p: Perfil) {
   const dias = Object.keys(p.atividade ?? {}).filter(d => (p.atividade![d] ?? 0) > 0).sort();
   const hoje = new Date(diaISO() + 'T12:00:00').getTime();
@@ -1727,7 +1823,7 @@ function revisaoDe(p: Perfil) {
   };
 }
 
-/** Progresso da meta do dia (em sessões ou em minutos). */
+/** Progresso da meta do dia (em sessÃµes ou em minutos). */
 function metaDoDia(p: Perfil) {
   const dia = diaISO();
   const sessoes = (p.atividade ?? {})[dia] ?? 0;
@@ -1754,7 +1850,7 @@ function registrarAtividade(p: Perfil, segundos: number) {
   p.atividadeMin[dia] = Math.round(((p.atividadeMin[dia] ?? 0) + minutos) * 10) / 10;
 }
 
-/** Índice do ranking: velocidade pesada pela precisão ao quadrado. */
+/** Ãndice do ranking: velocidade pesada pela precisÃ£o ao quadrado. */
 function indiceDe(p: Perfil) {
   const ultimas = (p.historico ?? []).slice(-20);
   if (!ultimas.length) return { indice: 0, wpm: 0, precisao: 0, base: 0 };
@@ -1793,7 +1889,7 @@ function painelDe(p: Perfil) {
   };
 }
 
-/** Atualiza os recordes de lição e devolve quais foram quebrados. */
+/** Atualiza os recordes de liÃ§Ã£o e devolve quais foram quebrados. */
 function atualizarRecordesLicao(p: Perfil, wpm: number, precisao: number, combo: number): string[] {
   const novos: string[] = [];
   const r = p.recordes!;
@@ -1858,7 +1954,7 @@ function marcarProcessado(p: Perfil, id?: string) {
   }
 }
 
-/** Letras que o aluno já pode praticar (lições concluídas + Avançado). */
+/** Letras que o aluno jÃ¡ pode praticar (liÃ§Ãµes concluÃ­das + AvanÃ§ado). */
 function letrasDePratica(p: Perfil): Set<string> {
   const base = new Set<string>(['a', 's', 'd', 'f', 'j', 'k', 'l']);
   letrasAcumuladas(Math.max(1, p.nivel)).forEach(c => base.add(c));
@@ -1889,7 +1985,7 @@ function textoDeTeste(p: Perfil, segundos: number): string {
   return partes.join(' ');
 }
 
-/** Texto curto de aquecimento/revisão (30 segundos). */
+/** Texto curto de aquecimento/revisÃ£o (30 segundos). */
 function textoDeDrill(p: Perfil, origem: 'revisao' | 'aquecimento' | 'fracas') {
   const grupos: string[] = [];
   if (origem === 'aquecimento') {
@@ -1913,7 +2009,7 @@ function textoDeDrill(p: Perfil, origem: 'revisao' | 'aquecimento' | 'fracas') {
   }
   return {
     texto: grupos.join(' '),
-    titulo: origem === 'revisao' ? 'Revisão de 30 segundos' : 'Treino das teclas fracas',
+    titulo: origem === 'revisao' ? 'RevisÃ£o de 30 segundos' : 'Treino das teclas fracas',
     segundos: 30
   };
 }
@@ -1931,47 +2027,47 @@ function palavrasDoJogo(p: Perfil) {
   return { palavras, letras: [...letras].sort().join('') };
 }
 
-/** Exercícios fixos de números e símbolos (prática avulsa, não mexe na posição). */
+/** ExercÃ­cios fixos de nÃºmeros e sÃ­mbolos (prÃ¡tica avulsa, nÃ£o mexe na posiÃ§Ã£o). */
 const NUMEROS_EXERCICIOS: { id: string; titulo: string; dica: string; texto: string }[] = [
   {
     id: 'numeros',
-    titulo: 'Fileira dos números',
-    dica: 'Fileira de cima, sem olhar para o teclado. Polegar fica no espaço.',
+    titulo: 'Fileira dos nÃºmeros',
+    dica: 'Fileira de cima, sem olhar para o teclado. Polegar fica no espaÃ§o.',
     texto: '11 22 33 44 55 66 77 88 99 00 12 34 56 78 90 10 20 30 40 50 60 70 80 91 82 73 64 55 46 37 28 19 01 02 03 04 05 06 07 08 09 99 88 77 66 55 44 33 22 11'
   },
   {
     id: 'simbolos',
-    titulo: 'Símbolos com Shift',
-    dica: 'Shift com o dedo oposto à tecla. Ex.: @ usa AltGr+2 no teclado ABNT2.',
+    titulo: 'SÃ­mbolos com Shift',
+    dica: 'Shift com o dedo oposto Ã  tecla. Ex.: @ usa AltGr+2 no teclado ABNT2.',
     texto: '! @ # $ % & * ( ) _ + = - / ? ; : , . 10% de 200 100% (50) [30] {20} a+b=c 3*4+5 10/2 = 5 @#$ !!! ??? (( )) [[ ]] {{ }}'
   },
   {
     id: 'acentos',
-    titulo: 'Acentuação do português',
-    dica: 'Acento agudo, til e cedilha são teclas mortas: acento primeiro, letra depois.',
-    texto: 'não sim ação coração canção pão mãe irmã avô avó café você até pé mês país início órgão três já está após atrás também será possível água informação'
+    titulo: 'AcentuaÃ§Ã£o do portuguÃªs',
+    dica: 'Acento agudo, til e cedilha sÃ£o teclas mortas: acento primeiro, letra depois.',
+    texto: 'nÃ£o sim aÃ§Ã£o coraÃ§Ã£o canÃ§Ã£o pÃ£o mÃ£e irmÃ£ avÃ´ avÃ³ cafÃ© vocÃª atÃ© pÃ© mÃªs paÃ­s inÃ­cio Ã³rgÃ£o trÃªs jÃ¡ estÃ¡ apÃ³s atrÃ¡s tambÃ©m serÃ¡ possÃ­vel Ã¡gua informaÃ§Ã£o'
   },
   {
     id: 'email',
-    titulo: 'E-mail e endereço',
+    titulo: 'E-mail e endereÃ§o',
     dica: 'O arroba e a barra aparecem em quase todo cadastro.',
     texto: 'maria@escola.com.br joao.silva@empresa.com www.jev.com.br site/curso?aluno=1 http://localhost:3000 aluno_01@teste.com.br contato@loja.com.br https://exemplo.com/pagina?id=42'
   },
   {
     id: 'dinheiro',
-    titulo: 'Números, dinheiro e horário',
-    dica: 'Vírgula no decimal, ponto no milhar e dois-pontos na hora.',
+    titulo: 'NÃºmeros, dinheiro e horÃ¡rio',
+    dica: 'VÃ­rgula no decimal, ponto no milhar e dois-pontos na hora.',
     texto: 'R$ 1.250,00 R$ 39,90 R$ 5,50 07:30 18:45 23:59 1/1/2026 31/12/2025 10% de 250 = 25 3,5 kg 1.000 pessoas 2.500,00 99,99 12:00 00:00'
   },
   {
     id: 'codigo',
-    titulo: 'Símbolos de código',
-    dica: 'Chaves, colchetes, ponto e vírgula: os símbolos de quem escreve código.',
+    titulo: 'SÃ­mbolos de cÃ³digo',
+    dica: 'Chaves, colchetes, ponto e vÃ­rgula: os sÃ­mbolos de quem escreve cÃ³digo.',
     texto: 'function somar(a, b) { return a + b; } if (x >= 10 && y != 0) { alert("ok"); } lista[0] = { id: 1, ativo: true }; total = a * (b + c) / 2;'
   }
 ];
 
-/** Cópia de segurança completa do estado (no banco ou em backups/ local). */
+/** CÃ³pia de seguranÃ§a completa do estado (no banco ou em backups/ local). */
 let ultimoBackup = 0;
 async function backupRotativo(forcar = false): Promise<string | null> {
   const agora = Date.now();
@@ -1983,7 +2079,7 @@ async function backupRotativo(forcar = false): Promise<string | null> {
     config,
     licoes,
     avLicoes,
-    perfis
+    perfis: [...perfis, ...lixeira] // a lixeira tambÃ©m entra no backup
   });
 }
 
@@ -1992,7 +2088,7 @@ async function backupRotativo(forcar = false): Promise<string | null> {
 // ---------------------------------------------------------------------------
 app.get('/api/painel', (req, res) => {
   const p = perfis.find(x => x.id === req.query.perfil);
-  if (!p) return res.status(404).json({ erro: 'Perfil não encontrado.' });
+  if (!p) return res.status(404).json({ erro: 'Perfil nÃ£o encontrado.' });
   ajustarPerfil(p);
   res.json({ painel: painelDe(p) });
 });
@@ -2006,13 +2102,13 @@ const SchemaPrefs = z.object({
 
 app.put('/api/perfis/:id/prefs', async (req, res) => {
   const p = perfis.find(x => x.id === req.params.id);
-  if (!p) return res.status(404).json({ erro: 'Perfil não encontrado.' });
+  if (!p) return res.status(404).json({ erro: 'Perfil nÃ£o encontrado.' });
   ajustarPerfil(p);
   const r = SchemaPrefs.safeParse(req.body);
-  if (!r.success) return res.status(400).json({ erro: 'Preferências inválidas.' });
+  if (!r.success) return res.status(400).json({ erro: 'PreferÃªncias invÃ¡lidas.' });
   const prefs = p.prefs!;
   if (r.data.diasRevisao != null) prefs.diasRevisao = r.data.diasRevisao;
-  if (r.data.metaDia) prefs.metaDia = { ...r.data.metaDia };
+  if (r.data.metaDia) prefs.metaDia = { ...r.data.metaDia } as MetaDia;
   if (r.data.jogoTamanho) prefs.jogoTamanho = r.data.jogoTamanho;
   if (r.data.reduzirMovimento != null) prefs.reduzirMovimento = r.data.reduzirMovimento;
   await salvar();
@@ -2057,7 +2153,7 @@ app.get('/api/ranking', (_req, res) => {
   });
 
   res.json({
-    formula: 'Índice = palavras por minuto médias × (precisão média ÷ 100)² nas últimas 20 lições',
+    formula: 'Ãndice = palavras por minuto mÃ©dias Ã— (precisÃ£o mÃ©dia Ã· 100)Â² nas Ãºltimas 20 liÃ§Ãµes',
     minimo: MIN_LICOES_RANKING,
     perfis: lista.map((x, i) => ({ ...x, posicao: i + 1 }))
   });
@@ -2065,17 +2161,17 @@ app.get('/api/ranking', (_req, res) => {
 
 app.get('/api/perfis/:id/exportar', (req, res) => {
   const p = perfis.find(x => x.id === req.params.id);
-  if (!p) return res.status(404).json({ erro: 'Perfil não encontrado.' });
+  if (!p) return res.status(404).json({ erro: 'Perfil nÃ£o encontrado.' });
   ajustarPerfil(p);
   res.json({ formato: 'curso-digitacao-perfil', versao: 2, exportadoEm: new Date().toISOString(), perfil: p });
 });
 
 app.post('/api/perfis/importar', async (req, res) => {
   const corpo = objeto(req.body);
-  if (!corpo) return res.status(400).json({ erro: 'Arquivo de backup inválido.' });
+  if (!corpo) return res.status(400).json({ erro: 'Arquivo de backup invÃ¡lido.' });
   const dados = objeto(corpo.perfil) ?? objeto(corpo.dados) ?? objeto(corpo.backup) ?? corpo;
   if (!dados || typeof dados.nome !== 'string' || !dados.nome.trim()) {
-    return res.status(400).json({ erro: 'O backup não tem o nome do perfil.' });
+    return res.status(400).json({ erro: 'O backup nÃ£o tem o nome do perfil.' });
   }
 
   const nomeBase = dados.nome.trim().slice(0, 20);
@@ -2295,7 +2391,7 @@ app.get('/api/backups', async (_req, res) => {
   try {
     res.json(await store.listarBackups());
   } catch (erro) {
-    res.status(500).json({ erro: 'Não consegui listar os backups.', detalhe: String(erro) });
+    res.status(500).json({ erro: 'NÃ£o consegui listar os backups.', detalhe: String(erro) });
   }
 });
 
@@ -2305,12 +2401,12 @@ app.post('/api/backups', async (_req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// Prática avulsa: aquecimento, revisão, teclas fracas e números/símbolos.
-// Não mexe na posição do aluno (nem em etapa, nem em lição).
+// PrÃ¡tica avulsa: aquecimento, revisÃ£o, teclas fracas e nÃºmeros/sÃ­mbolos.
+// NÃ£o mexe na posiÃ§Ã£o do aluno (nem em etapa, nem em liÃ§Ã£o).
 // ---------------------------------------------------------------------------
 app.get('/api/pratica/texto', (req, res) => {
   const p = perfis.find(x => x.id === req.query.perfil);
-  if (!p) return res.status(404).json({ erro: 'Perfil não encontrado.' });
+  if (!p) return res.status(404).json({ erro: 'Perfil nÃ£o encontrado.' });
   ajustarPerfil(p);
   const origem =
     req.query.origem === 'aquecimento' ? 'aquecimento' : req.query.origem === 'fracas' ? 'fracas' : 'revisao';
@@ -2333,7 +2429,7 @@ app.get('/api/numeros', (req, res) => {
 
 app.get('/api/numeros/:id', (req, res) => {
   const e = NUMEROS_EXERCICIOS.find(x => x.id === req.params.id);
-  if (!e) return res.status(404).json({ erro: 'Exercício não encontrado.' });
+  if (!e) return res.status(404).json({ erro: 'ExercÃ­cio nÃ£o encontrado.' });
   res.json({ id: e.id, titulo: e.titulo, dica: e.dica, texto: e.texto, segundos: 0 });
 });
 
@@ -2349,10 +2445,10 @@ const SchemaTreinoLivre = z.object({
 
 app.post('/api/treino-livre', async (req, res) => {
   const r = SchemaTreinoLivre.safeParse(req.body);
-  if (!r.success) return res.status(400).json({ erro: 'Dados enviados inválidos.' });
+  if (!r.success) return res.status(400).json({ erro: 'Dados enviados invÃ¡lidos.' });
   const dados = r.data;
   const p = perfis.find(x => x.id === dados.perfilId);
-  if (!p) return res.status(404).json({ erro: 'Perfil não encontrado.' });
+  if (!p) return res.status(404).json({ erro: 'Perfil nÃ£o encontrado.' });
   ajustarPerfil(p);
 
   const acertos = dados.eventosTeclas.filter(e => e.correta).length;
@@ -2368,7 +2464,7 @@ app.post('/api/treino-livre', async (req, res) => {
       wpm,
       precisao,
       pontos: acertos,
-      mensagem: 'Este treino já tinha sido registrado.',
+      mensagem: 'Este treino jÃ¡ tinha sido registrado.',
       errosPorTecla: [],
       painel: painelDe(p),
       conquistasNovas: []
@@ -2412,12 +2508,12 @@ app.post('/api/treino-livre', async (req, res) => {
     segundos: dados.segundos,
     mensagem:
       dados.origem === 'numeros'
-        ? `Exercício de ${exercicio ? exercicio.titulo.toLowerCase() : 'números'} concluído.`
+        ? `ExercÃ­cio de ${exercicio ? exercicio.titulo.toLowerCase() : 'nÃºmeros'} concluÃ­do.`
         : dados.origem === 'aquecimento'
-          ? 'Aquecimento concluído. Agora o ritmo já está melhor.'
+          ? 'Aquecimento concluÃ­do. Agora o ritmo jÃ¡ estÃ¡ melhor.'
           : dados.origem === 'livre'
-            ? 'Texto livre concluído.'
-            : 'Revisão concluída. As teclas fracas agradecem.',
+            ? 'Texto livre concluÃ­do.'
+            : 'RevisÃ£o concluÃ­da. As teclas fracas agradecem.',
     errosPorTecla: stats.filter(s => s.erros > 0).slice(0, 5),
     conquistasNovas,
     painel: painelDe(p)
@@ -2429,7 +2525,7 @@ app.post('/api/treino-livre', async (req, res) => {
 // ---------------------------------------------------------------------------
 app.get('/api/testes/texto', (req, res) => {
   const p = perfis.find(x => x.id === req.query.perfil);
-  if (!p) return res.status(404).json({ erro: 'Perfil não encontrado.' });
+  if (!p) return res.status(404).json({ erro: 'Perfil nÃ£o encontrado.' });
   ajustarPerfil(p);
   const segundos = req.query.tipo === '30s' ? 30 : 60;
   res.json({
@@ -2452,10 +2548,10 @@ const SchemaTeste = z.object({
 
 app.post('/api/testes', async (req, res) => {
   const r = SchemaTeste.safeParse(req.body);
-  if (!r.success) return res.status(400).json({ erro: 'Dados enviados inválidos.' });
+  if (!r.success) return res.status(400).json({ erro: 'Dados enviados invÃ¡lidos.' });
   const dados = r.data;
   const p = perfis.find(x => x.id === dados.perfilId);
-  if (!p) return res.status(404).json({ erro: 'Perfil não encontrado.' });
+  if (!p) return res.status(404).json({ erro: 'Perfil nÃ£o encontrado.' });
   ajustarPerfil(p);
 
   const acertos = dados.eventosTeclas.filter(e => e.correta).length;
@@ -2531,11 +2627,11 @@ app.post('/api/testes', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// Jogo das palavras (não mexe na posição nem nas metas das lições)
+// Jogo das palavras (nÃ£o mexe na posiÃ§Ã£o nem nas metas das liÃ§Ãµes)
 // ---------------------------------------------------------------------------
 app.get('/api/jogo/palavras', (req, res) => {
   const p = perfis.find(x => x.id === req.query.perfil);
-  if (!p) return res.status(404).json({ erro: 'Perfil não encontrado.' });
+  if (!p) return res.status(404).json({ erro: 'Perfil nÃ£o encontrado.' });
   ajustarPerfil(p);
   const { palavras, letras } = palavrasDoJogo(p);
   res.json({ palavras, letras, recorde: p.recordes!.jogo, modalidades: ['classico', 'precisao', 'zen'] });
@@ -2555,10 +2651,10 @@ const SchemaJogo = z.object({
 
 app.post('/api/jogo/resultado', async (req, res) => {
   const r = SchemaJogo.safeParse(req.body);
-  if (!r.success) return res.status(400).json({ erro: 'Dados do jogo inválidos.' });
+  if (!r.success) return res.status(400).json({ erro: 'Dados do jogo invÃ¡lidos.' });
   const dados = r.data;
   const p = perfis.find(x => x.id === dados.perfilId);
-  if (!p) return res.status(404).json({ erro: 'Perfil não encontrado.' });
+  if (!p) return res.status(404).json({ erro: 'Perfil nÃ£o encontrado.' });
   ajustarPerfil(p);
 
   if (jaProcessado(p, dados.id)) {
@@ -2581,7 +2677,7 @@ app.post('/api/jogo/resultado', async (req, res) => {
   }
 
   let novoRecorde = false;
-  // zen é treino livre: conta atividade, mas não entra nos recordes
+  // zen Ã© treino livre: conta atividade, mas nÃ£o entra nos recordes
   if (dados.modalidade !== 'zen') {
     const anterior = p.recordes!.jogo;
     if (!anterior || dados.pontos > anterior.pontos) {
@@ -2612,24 +2708,24 @@ app.post('/api/jogo/resultado', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// Inicialização (usada tanto pelo servidor local quanto pela função da Vercel)
+// InicializaÃ§Ã£o (usada tanto pelo servidor local quanto pela funÃ§Ã£o da Vercel)
 // ---------------------------------------------------------------------------
 const TTL_FRESCOR_MS = 15000;
 let ultimaCarga = 0;
 let iniciado: Promise<void> | null = null;
 
-/** Explica no terminal por que o banco não foi usado (só em desenvolvimento). */
+/** Explica no terminal por que o banco nÃ£o foi usado (sÃ³ em desenvolvimento). */
 async function avisarSemBanco(): Promise<void> {
   const d = await store.diagnosticoEnv();
-  const linhas = ['⚠️  Nenhum banco configurado: os dados ficam em perfis.json / licoes.json (só neste computador).'];
+  const linhas = ['âš ï¸  Nenhum banco configurado: os dados ficam em perfis.json / licoes.json (sÃ³ neste computador).'];
   if (!d.arquivoEnvExiste) {
-    linhas.push(`Não encontrei o arquivo .env. Crie um em: ${d.caminhoEnv}`);
-    linhas.push('Atenção: o app lê ".env" — o ".env.example" é só o modelo.');
+    linhas.push(`NÃ£o encontrei o arquivo .env. Crie um em: ${d.caminhoEnv}`);
+    linhas.push('AtenÃ§Ã£o: o app lÃª ".env" â€” o ".env.example" Ã© sÃ³ o modelo.');
   } else {
-    linhas.push(`O arquivo .env existe (${d.caminhoEnv}), mas nenhuma variável de banco está preenchida.`);
+    linhas.push(`O arquivo .env existe (${d.caminhoEnv}), mas nenhuma variÃ¡vel de banco estÃ¡ preenchida.`);
   }
-  linhas.push('Opção 1 (sem senha): SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY');
-  linhas.push('Opção 2: DATABASE_URL + DB_SENHA');
+  linhas.push('OpÃ§Ã£o 1 (sem senha): SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY');
+  linhas.push('OpÃ§Ã£o 2: DATABASE_URL + DB_SENHA');
   linhas.push('Salve o .env e rode de novo: npm run dev');
   console.warn(linhas.join('\n'));
 }
@@ -2645,27 +2741,27 @@ export function iniciar(): Promise<void> {
       if (!store.naNuvem()) await avisarSemBanco();
     }
   })().catch(erro => {
-    iniciado = null; // permite tentar de novo na próxima requisição
+    iniciado = null; // permite tentar de novo na prÃ³xima requisiÃ§Ã£o
     throw erro;
   });
   return iniciado;
 }
 
 /**
- * Cada instância (lambda) tem a sua memória. Com banco configurado, relemos os
- * dados de tempos em tempos para o ranking não ficar velho entre instâncias.
+ * Cada instÃ¢ncia (lambda) tem a sua memÃ³ria. Com banco configurado, relemos os
+ * dados de tempos em tempos para o ranking nÃ£o ficar velho entre instÃ¢ncias.
  */
 async function garantirFresco(): Promise<void> {
   if (!store.naNuvem()) return;
   if (ultimaCarga && Date.now() - ultimaCarga < TTL_FRESCOR_MS) return;
-  await fila; // espera as gravações pendentes antes de reler
+  await fila; // espera as gravaÃ§Ãµes pendentes antes de reler
   await carregarPerfis();
-  await carregarLicoes(false); // relê sem regravar
+  await carregarLicoes(false); // relÃª sem regravar
   ultimaCarga = Date.now();
 }
 
 // ---------------------------------------------------------------------------
-// Erro não tratado: devolve JSON (mais fácil de ler no log da Vercel)
+// Erro nÃ£o tratado: devolve JSON (mais fÃ¡cil de ler no log da Vercel)
 // ---------------------------------------------------------------------------
 app.use((erro: any, _req: any, res: any, _next: any) => {
   console.error('Erro na API:', erro);
@@ -2683,10 +2779,10 @@ if (!process.env.VERCEL) {
   iniciar()
     .then(() =>
       app.listen(PORT, () => {
-        console.log(`Servidor pedagógico rodando na porta ${PORT} (${licoes.length} lições)`);
+        console.log(`Servidor pedagÃ³gico rodando na porta ${PORT} (${licoes.length} liÃ§Ãµes)`);
         console.log(`Dados em: ${store.descrever()}`);
-        console.log(JEV_API_KEY ? 'Jev: chave encontrada.' : 'Jev: JEV_API_KEY ausente, rodando só com a regra fixa.');
-        console.log(CODIGO_ACESSO ? 'Acesso: protegido por código.' : 'Acesso: aberto (defina CODIGO_ACESSO para proteger).');
+        console.log(JEV_API_KEY ? 'Jev: chave encontrada.' : 'Jev: JEV_API_KEY ausente, rodando sÃ³ com a regra fixa.');
+        console.log(CODIGO_ACESSO ? 'Acesso: protegido por cÃ³digo.' : 'Acesso: aberto (defina CODIGO_ACESSO para proteger).');
         console.log('Extras: painel do dia, ofensiva, testes cronometrados, jogo das palavras, ranking e backups.');
       })
     )

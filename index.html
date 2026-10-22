@@ -69,6 +69,8 @@ button:hover{box-shadow:0 8px 26px #6ee7ff55}button:active{transform:scale(.97)}
 button:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .mute{position:fixed;right:14px;bottom:14px;z-index:6;margin:0;padding:8px 12px;font-size:13px;background:var(--glass);color:var(--text);border:1px solid var(--line)}
 .acoes{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+/* ações de administração: só aparecem depois de entrar com o código de admin */
+body:not(.admin) .so-admin{display:none!important}
 .mini{margin:0;padding:8px 14px;font-size:14px;background:var(--glass);color:var(--text);border:1px solid var(--line)}
 .mini:hover{box-shadow:none;background:rgba(255,255,255,.12)}
 .mini.x{color:var(--bad);padding:6px 10px;font-size:13px}
@@ -254,6 +256,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px;text-
   <h2>Quem vai treinar?</h2><p>Escolha um perfil para continuar de onde parou.</p>
   <div id="p-lista"></div>
   <div class="novo"><input id="p-nome" maxlength="20" placeholder="Nome do novo perfil" aria-label="Nome do novo perfil"><div class="cores" id="p-cores"></div><button id="p-criar">Criar perfil</button></div>
+  <div class="acoes" style="margin-top:10px"><button class="mini" id="p-lixeira">Lixeira</button></div>
 </div></div>
 <div class="over" id="met"><div class="box largo" id="met-box"></div></div>
 <div class="over" id="lic"><div class="box largo" id="lic-box"></div></div>
@@ -264,6 +267,8 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px;text-
 <div class="over" id="jogo"><div class="jogo-caixa" id="jogo-box"></div></div>
 <div class="over" id="rank"><div class="box largo" id="rank-box"></div></div>
 <div class="over" id="ajustes"><div class="box largo" id="ajustes-box"></div></div>
+<div class="over" id="lixeira"><div class="box largo" id="lixeira-box"></div></div>
+<div class="over" id="acao"><div class="box" id="acao-box"></div></div>
 <div class="over" id="acesso"><div class="box">
   <h2>Entrar</h2>
   <p>Este curso está protegido por um código de acesso. Peça o código para quem te convidou.</p>
@@ -442,8 +447,10 @@ addEventListener('keydown', e => {
   if (e.key === 'Escape' && $('met').classList.contains('show')) $('met').classList.remove('show');
   if (e.key === 'Escape' && $('lic').classList.contains('show')) $('lic').classList.remove('show');
   if (e.key === 'Escape' && $('av').classList.contains('show')) $('av').classList.remove('show');
+  if (e.key === 'Escape' && $('lixeira').classList.contains('show')) $('lixeira').classList.remove('show');
+  if (e.key === 'Escape' && $('acao').classList.contains('show')) $('acao').classList.remove('show');
   if (e.key === 'Escape' && perfil) $('perfis').classList.remove('show');
-  if (e.target.tagName === 'INPUT' || $('perfis').classList.contains('show') || $('met').classList.contains('show') || $('lic').classList.contains('show') || $('av').classList.contains('show') || $('testes').classList.contains('show') || $('rank').classList.contains('show') || $('ajustes').classList.contains('show') || $('revisao').classList.contains('show')) return;
+  if (e.target.tagName === 'INPUT' || $('perfis').classList.contains('show') || $('met').classList.contains('show') || $('lic').classList.contains('show') || $('av').classList.contains('show') || $('testes').classList.contains('show') || $('rank').classList.contains('show') || $('ajustes').classList.contains('show') || $('lixeira').classList.contains('show') || $('acao').classList.contains('show') || $('revisao').classList.contains('show')) return;
   if (e.key === 'Enter' && $('over').classList.contains('show')) { acaoEnter(); return; }
   if ($('over').classList.contains('show')) return;
   if (d.bloqueado || !d.texto || d.pos >= d.texto.length) return;
@@ -561,22 +568,108 @@ async function listarPerfis() {
   const lista = await (await fetch(API + '/api/perfis')).json();
   $('p-lista').innerHTML = lista.length ? lista.map(p => `
     <div class="pf" data-id="${p.id}"><span class="av" style="background:${p.cor}">${esc(p.nome[0].toUpperCase())}</span>
-    <span class="pn"><b>${esc(p.nome)}</b><small>${p.trilha === 'a' ? 'Avançado ' + p.avNivel : 'Lição ' + p.nivel + ' de ' + p.totalLicoes + ', etapa ' + p.etapa}, ${p.licoes} exercícios</small></span>
-    <button class="mini x" data-del="${p.id}" data-nome="${esc(p.nome)}">Excluir</button></div>`).join('')
+    <span class="pn"><b>${esc(p.nome)}</b><small>${p.trilha === 'a' ? 'Avançado ' + p.avNivel : 'Lição ' + p.nivel + ' de ' + p.totalLicoes + ', etapa ' + p.etapa}, ${p.licoes} exercícios</small></span></div>`).join('')
     : '<p class="vazio">Nenhum perfil ainda. Crie o primeiro abaixo.</p>';
+  atualizarBotaoLixeira();
   return lista;
 }
 async function abrirPerfis() { try { await listarPerfis(); $('perfis').classList.add('show'); $('p-nome').focus(); } catch { $('texto').textContent = 'Servidor desligado. Rode "npm run dev" e atualize a página.'; } }
 
-$('p-lista').onclick = async e => {
-  const del = e.target.closest('[data-del]');
-  if (del) {
-    if (!confirm(`Excluir o perfil "${del.dataset.nome}" e todo o progresso? Não dá para desfazer.`)) return;
-    await fetch(API + '/api/perfil?id=' + encodeURIComponent(del.dataset.del), { method: 'DELETE' });
-    if (perfil && perfil.id === del.dataset.del) { perfil = null; apagarLocal('perfilAtual'); }
-    listarPerfis(); return;
+async function atualizarBotaoLixeira() {
+  const b = $('p-lixeira'); if (!b) return;
+  try {
+    const j = await (await fetch(API + '/api/lixeira')).json();
+    const n = (j.perfis || []).length;
+    b.textContent = n ? `Lixeira (${n})` : 'Lixeira';
+  } catch {
+    b.textContent = 'Lixeira'; // servidor antigo (sem lixeira): não atrapalha
   }
-  const card = e.target.closest('.pf'); if (card) selecionar(card.dataset.id);
+}
+$('p-lixeira').onclick = abrirLixeira;
+
+/**
+ * Confirmação que exige digitar uma palavra (o nome do perfil).
+ * Devolve uma Promise<boolean> — true só quando o texto confere.
+ */
+function confirmarAcao(opcoes) {
+  return new Promise(resolve => {
+    $('acao-box').innerHTML = `
+      <h2>${esc(opcoes.titulo)}</h2>
+      <p>${opcoes.texto}</p>
+      <div class="novo"><input id="acao-nome" autocomplete="off" placeholder="Digite: ${esc(opcoes.palavra)}" aria-label="Confirmação"></div>
+      <div class="msg err" id="acao-msg" style="min-height:20px"></div>
+      <button class="mini x" id="acao-ok">${esc(opcoes.rotulo)}</button>
+      <button class="mini" id="acao-cancelar" style="margin-left:8px">Cancelar</button>`;
+    $('acao').classList.add('show');
+    const fechar = ok => { $('acao').classList.remove('show'); resolve(ok); };
+    $('acao-ok').onclick = () => {
+      const digitado = ($('acao-nome').value || '').trim().toLowerCase();
+      if (digitado !== String(opcoes.palavra).trim().toLowerCase()) {
+        $('acao-msg').textContent = 'O nome não confere. Digite exatamente: ' + opcoes.palavra;
+        $('acao-nome').focus();
+        return;
+      }
+      fechar(true);
+    };
+    $('acao-cancelar').onclick = () => fechar(false);
+    $('acao-nome').onkeydown = e => {
+      if (e.key === 'Enter') { e.preventDefault(); $('acao-ok').click(); }
+      if (e.key === 'Escape') fechar(false);
+    };
+    setTimeout(() => { const i = $('acao-nome'); if (i) i.focus(); }, 60);
+  });
+}
+
+async function abrirLixeira() {
+  let j = { dias: 30, perfis: [] };
+  try { j = await (await fetch(API + '/api/lixeira')).json(); } catch { /* mostra vazia */ }
+  const lista = Array.isArray(j.perfis) ? j.perfis : [];
+  $('lixeira-box').innerHTML = `
+    <h2>Lixeira</h2>
+    <p>Perfis excluídos ficam aqui por ${j.dias || 30} dias. Depois disso são apagados de vez.</p>
+    ${lista.length ? lista.map(p => `
+      <div class="pf" style="cursor:default">
+        <span class="av" style="background:${p.cor};opacity:.55">${esc((p.nome[0] || '?').toUpperCase())}</span>
+        <span class="pn"><b>${esc(p.nome)}</b><small>${p.licoes} exercícios · excluído em ${new Date(p.excluidoEm).toLocaleDateString('pt-BR')} · ${p.diasRestantes} dia(s) para restaurar</small></span>
+        <button class="mini so-admin" data-restaurar="${p.id}">Restaurar</button>
+        <button class="mini x so-admin" data-apagar="${p.id}" data-nome="${esc(p.nome)}">De vez</button>
+      </div>`).join('') : '<p class="vazio">A lixeira está vazia.</p>'}
+    <div class="acoes" style="margin-top:12px"><button class="mini" id="lx-fechar">Fechar</button></div>`;
+  $('lixeira').classList.add('show');
+}
+
+$('lixeira-box').onclick = async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'lx-fechar') { $('lixeira').classList.remove('show'); return; }
+  if (b.dataset.restaurar) {
+    const r = await fetch(API + '/api/perfil-restaurar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ perfilId: b.dataset.restaurar })
+    });
+    if (r.ok) {
+      aviso('Perfil restaurado — já pode treinar de novo.');
+      $('lixeira').classList.remove('show');
+      abrirPerfis();
+    } else {
+      aviso('Não consegui restaurar esse perfil.', 'Erro');
+    }
+    return;
+  }
+  if (b.dataset.apagar) {
+    const ok = await confirmarAcao({
+      titulo: 'Excluir de vez?',
+      texto: `Isso apaga <b>${esc(b.dataset.nome)}</b> definitivamente. Não tem como voltar atrás.`,
+      palavra: b.dataset.nome,
+      rotulo: 'Excluir de vez'
+    });
+    if (!ok) return;
+    await fetch(API + '/api/lixeira?id=' + encodeURIComponent(b.dataset.apagar), { method: 'DELETE' });
+    abrirLixeira();
+  }
+};
+
+$('p-lista').onclick = e => {
+  const card = e.target.closest('.pf');
+  if (card) selecionar(card.dataset.id);
 };
 async function criar() {
   const nome = $('p-nome').value.trim(); if (!nome) { $('p-nome').focus(); return; }
@@ -620,6 +713,8 @@ async function selecionar(id) {
   } catch (erro) {
     // nunca falhar em silêncio: se não abrir, o aluno precisa saber por quê
     aviso('Não consegui abrir o perfil: ' + (erro && erro.message ? erro.message : 'erro desconhecido'), 'Erro');
+    // sem perfil aberto não há tela de treino: volta para a escolha de perfil
+    if (!perfil) abrirPerfis();
   }
 }
 $('b-perfil').onclick = abrirPerfis;
@@ -787,10 +882,10 @@ async function abrirLicoes(msg = '', erro = false) {
   if (!perfil) return abrirPerfis();
   const j = await (await fetch(API + '/api/licoes?perfil=' + perfil.id)).json(), L = j.licoes, ultima = L[L.length - 1];
   const todas = j.modo === 'todas'; licInfo = j;
-  const blocoModo = `<div class="modo"><span>Pontuação mínima:</span>
+  const blocoModo = `<div class="modo so-admin"><span>Pontuação mínima:</span>
       <button class="mini ${todas ? 'on' : ''}" data-modo="todas">Todas as lições</button>
       <button class="mini ${todas ? '' : 'on'}" data-modo="manual">Manual (cada lição)</button></div>
-    ${todas ? `<div class="lic"><span class="pn"><b>Valor para todas as lições</b><small>Vale para todas as lições de letras, inclusive as concluídas, e para as novas. O Avançado tem a sua própria pontuação.</small></span>
+    ${todas ? `<div class="lic so-admin"><span class="pn"><b>Valor para todas as lições</b><small>Vale para todas as lições de letras, inclusive as concluídas, e para as novas. O Avançado tem a sua própria pontuação.</small></span>
       <label>Precisão mín. (%)<input id="g-prec" type="number" min="50" max="100" value="${j.padrao.precisaoMin}"></label>
       <label>Palavras/min mín.<input id="g-wpm" type="number" min="0" max="150" value="${j.padrao.wpmMin}"></label>
       <button class="mini" id="g-aplicar">Aplicar a todas</button></div>` : ''}`;
@@ -799,17 +894,17 @@ async function abrirLicoes(msg = '', erro = false) {
     return `<div class="lic ${l.atual ? 'atual' : ''} ${l.status === 'bloqueada' ? 'bloq' : ''}" data-n="${l.numero}">
       <span class="pn"><b>${esc(l.titulo)}</b><small>Letras: ${esc([...l.letras].join(' ').toUpperCase())}<br>Etapas: ${l.etapas.map(esc).join(' → ')}${l.atual ? ' (você está na etapa ' + l.etapaAtual + ')' : ''}</small></span>
       <span class="tag ${cls}">${rot}</span>
-      <label>Precisão mín. (%)<input class="pont" data-campo="prec" type="number" min="50" max="100" value="${l.precisaoMin}" ${todas ? 'disabled' : ''}></label>
-      <label>Palavras/min mín.<input class="pont" data-campo="wpm" type="number" min="0" max="150" value="${l.wpmMin}" ${todas ? 'disabled' : ''}></label>
+      <label class="so-admin">Precisão mín. (%)<input class="pont" data-campo="prec" type="number" min="50" max="100" value="${l.precisaoMin}" ${todas ? 'disabled' : ''}></label>
+      <label class="so-admin">Palavras/min mín.<input class="pont" data-campo="wpm" type="number" min="0" max="150" value="${l.wpmMin}" ${todas ? 'disabled' : ''}></label>
       <button class="mini" data-treinar="${l.numero}" ${l.status === 'bloqueada' ? 'disabled' : ''}>${l.atual ? 'Continuar' : 'Treinar'}</button>
-      ${!l.fixa && l.numero === ultima.numero ? `<button class="mini x" data-dellic="${l.numero}">Excluir</button>` : ''}
+      ${!l.fixa && l.numero === ultima.numero ? `<button class="mini x so-admin" data-dellic="${l.numero}">Excluir</button>` : ''}
     </div>`;
   }).join('');
   $('lic-box').innerHTML = `
     <h2>Lições</h2><p>Para passar de etapa, o aluno precisa bater a precisão e a velocidade definidas em cada lição. O Jev ainda avalia se está pronto, e teclas em treino também seguram a etapa.</p>
     ${blocoModo}
     ${linhas}
-    <div class="novo"><input id="l-letras" maxlength="30" placeholder="Letras da nova lição, ex: qwer" aria-label="Letras da nova lição">
+    <div class="novo so-admin"><input id="l-letras" maxlength="30" placeholder="Letras da nova lição, ex: qwer" aria-label="Letras da nova lição">
       ${todas ? '' : `<label style="font-size:12px;color:var(--mute)">Precisão (%)<br><input id="l-prec" type="number" min="50" max="100" value="85" style="width:74px;padding:11px 8px;border-radius:12px;border:1px solid var(--line);background:rgba(5,8,22,.6);color:var(--text)"></label>
       <label style="font-size:12px;color:var(--mute)">Palavras/min<br><input id="l-wpm" type="number" min="0" max="150" value="15" style="width:74px;padding:11px 8px;border-radius:12px;border:1px solid var(--line);background:rgba(5,8,22,.6);color:var(--text)"></label>`}
       <button id="l-criar">Criar lição ${L.length + 1}</button></div>
@@ -873,19 +968,19 @@ async function abrirAvancado(msg = '', erro = false) {
     return `<div class="lic ${l.atual ? 'atual' : ''} ${l.status === 'bloqueada' ? 'bloq' : ''}" data-n="${l.numero}">
       <span class="pn"><b>${esc(l.titulo)}</b><small>${esc(l.escopo)}${l.auto ? ' · criada automaticamente' : ''}<br>Etapas: ${l.etapas.map(esc).join(' → ')}${l.atual ? ' (você está na etapa ' + l.etapaAtual + ')' : ''}</small></span>
       <span class="tag ${cls}">${rot}</span>
-      <label>Precisão mín. (%)<input class="pont-av" data-campo="prec" type="number" min="50" max="100" value="${l.precisaoMin}"></label>
-      <label>Palavras/min mín.<input class="pont-av" data-campo="wpm" type="number" min="0" max="150" value="${l.wpmMin}"></label>
+      <label class="so-admin">Precisão mín. (%)<input class="pont-av" data-campo="prec" type="number" min="50" max="100" value="${l.precisaoMin}"></label>
+      <label class="so-admin">Palavras/min mín.<input class="pont-av" data-campo="wpm" type="number" min="0" max="150" value="${l.wpmMin}"></label>
       <button class="mini" data-treinar-av="${l.numero}" ${l.status === 'bloqueada' ? 'disabled' : ''}>${l.atual ? 'Continuar' : 'Treinar'}</button>
     </div>`;
   }).join('');
   $('av-box').innerHTML = `
     <h2>Avançado</h2><p>Palavras e frases do dia a dia com as letras que você já aprendeu: Avançado 1 usa as lições 1 a 5, o 2 usa 1 a 10 e o 3 em diante usa tudo, até a última lição criada.</p>
-    <div class="modo"><span>Novas lições:</span>
+    <div class="modo so-admin"><span>Novas lições:</span>
       <button class="mini ${j.automatico ? 'on' : ''}" data-auto="1">Adicionar automaticamente</button>
       <button class="mini ${j.automatico ? '' : 'on'}" data-auto="0">Só quando eu pedir</button></div>
     <p style="font-size:13px">${j.automatico ? 'Ao terminar a última lição, o sistema cria a próxima, sempre mais difícil (frases maiores e meta um pouco maior).' : 'Ao terminar a última lição, use o botão abaixo para adicionar a próxima.'}</p>
     ${linhas}
-    <button class="mini" id="a-add">Adicionar lição ${j.licoes.length + 1}</button>
+    <button class="mini so-admin" id="a-add">Adicionar lição ${j.licoes.length + 1}</button>
     <div class="msg ${erro ? 'err' : ''}" id="a-msg" role="status">${esc(msg)}</div>
     <button class="mini" id="a-fechar" style="margin-top:12px">Fechar</button>`;
   $('av').classList.add('show');
@@ -1463,6 +1558,18 @@ function abrirAjustes(msg, erro) {
       <span class="pn"><b>Backups automáticos</b><small>Uma cópia completa a cada 10 minutos, guardando as últimas 20.</small></span>
       <button class="mini" id="aj-backup">Criar backup agora</button>
     </div>
+    <div class="sec2"><span>Administração</span><small>excluir lições, mudar pontuação, lixeira</small></div>
+    <div class="aj">
+      <span class="pn"><b id="aj-admin-estado">verificando...</b><small>O código de administrador libera as ações de risco neste navegador. Os outros perfis só treinam.</small></span>
+      <input id="aj-admin-codigo" placeholder="Código de administrador" autocomplete="off" aria-label="Código de administrador">
+      <button class="mini" id="aj-admin-entrar">Entrar como admin</button>
+      <button class="mini" id="aj-admin-sair">Sair do modo admin</button>
+    </div>
+    <div class="sec2"><span>Zona de risco</span></div>
+    <div class="aj">
+      <span class="pn"><b>Excluir este perfil</b><small>O perfil vai para a lixeira e pode ser restaurado em até 30 dias.</small></span>
+      <button class="mini x so-admin" id="aj-excluir">Excluir perfil</button>
+    </div>
     <div class="sec2"><span>Diagnóstico</span><small>útil para conferir o deploy</small></div>
     <div class="aj">
       <span class="pn"><b>Onde os dados estão sendo guardados</b><small id="aj-origem">verificando...</small></span>
@@ -1473,6 +1580,69 @@ function abrirAjustes(msg, erro) {
   $('ajustes').classList.add('show');
 
   $('aj-fechar').onclick = () => $('ajustes').classList.remove('show');
+
+  const pintarAdmin = () => {
+    const el = $('aj-admin-estado');
+    if (!el) return;
+    const codigo = $('aj-admin-codigo'), entrar = $('aj-admin-entrar'), sair = $('aj-admin-sair');
+    if (!adminConfigurado) {
+      el.textContent = 'Servidor sem código de administrador';
+      el.style.color = 'var(--mute)';
+      if (codigo) codigo.style.display = 'none';
+      if (entrar) entrar.style.display = 'none';
+      if (sair) sair.style.display = 'none';
+      return;
+    }
+    el.textContent = adminOk ? 'Modo administrador ativo' : 'Modo somente leitura';
+    el.style.color = adminOk ? 'var(--ok)' : 'var(--mute)';
+    if (codigo) codigo.style.display = adminOk ? 'none' : '';
+    if (entrar) entrar.style.display = adminOk ? 'none' : '';
+    if (sair) sair.style.display = adminOk ? '' : 'none';
+  };
+
+  $('aj-admin-entrar').onclick = async () => {
+    const valor = ($('aj-admin-codigo').value || '').trim();
+    if (!valor) return msgAjustes('Digite o código de administrador.', true);
+    const anterior = codigoAdmin;
+    codigoAdmin = valor;
+    const info = await conferirAdmin();
+    if (info && info.adminOk) {
+      try { localStorage.setItem(CHAVE_ADMIN, valor); } catch { /* segue sem salvar */ }
+      $('aj-admin-codigo').value = '';
+      msgAjustes('Modo administrador ativo neste navegador.');
+      pintarAdmin();
+      abrirAjustes('Modo administrador ativo neste navegador.');
+      return;
+    }
+    codigoAdmin = anterior;
+    await conferirAdmin();
+    msgAjustes('Código de administrador incorreto.', true);
+  };
+
+  $('aj-admin-sair').onclick = () => {
+    codigoAdmin = '';
+    try { localStorage.removeItem(CHAVE_ADMIN); } catch { /* ignora */ }
+    marcarAdmin(false);
+    msgAjustes('Modo administrador desligado.');
+    pintarAdmin();
+  };
+
+  pintarAdmin();
+
+  $('aj-excluir').onclick = async () => {
+    const ok = await confirmarAcao({
+      titulo: 'Excluir este perfil?',
+      texto: `O perfil <b>${esc(perfil.nome)}</b> vai para a lixeira. Dá para restaurar em até 30 dias, em "Lixeira" na tela de perfis.`,
+      palavra: perfil.nome,
+      rotulo: 'Excluir (vai para a lixeira)'
+    });
+    if (!ok) return;
+    await fetch(API + '/api/perfil?id=' + encodeURIComponent(perfil.id), { method: 'DELETE' });
+    perfil = null;
+    apagarLocal('perfilAtual');
+    $('ajustes').classList.remove('show');
+    abrirPerfis();
+  };
 
   const testarConexao = async () => {
     const el = $('aj-origem');
@@ -2060,6 +2230,7 @@ async function iniciarApp() {
 
 /* ---------- código de acesso (quando CODIGO_ACESSO existe no servidor) ---------- */
 const CHAVE_CODIGO = 'codigoAcesso';
+const CHAVE_ADMIN = 'codigoAdmin';
 const fetchSemCodigo = window.fetch.bind(window);
 
 // localStorage pode falhar (modo privado): nunca deixa o app travar por isso.
@@ -2073,14 +2244,48 @@ const apagarCodigoSalvo = () => {
   try { localStorage.removeItem(CHAVE_CODIGO); } catch { /* ignora */ }
 };
 
+// ---- administrador ---------------------------------------------------------
+// O código de admin fica só neste navegador e vai no cabeçalho x-admin.
+// Sem ele, o servidor recusa (403) as ações de administração.
+let codigoAdmin = (() => { try { return localStorage.getItem(CHAVE_ADMIN) || ''; } catch { return ''; } })();
+let adminConfigurado = false; // o servidor tem CODIGO_ADMIN definido?
+let adminOk = false; // este navegador está autenticado como admin?
+
+function marcarAdmin(ok) {
+  adminOk = Boolean(ok);
+  document.body.classList.toggle('admin', adminOk);
+}
+
+async function conferirAdmin() {
+  try {
+    const info = await (await fetchSemCodigo(API + '/api/ping', { headers: codigoAdmin ? { 'x-admin': codigoAdmin } : {} })).json();
+    adminConfigurado = Boolean(info.admin);
+    // servidor sem código de admin = todos podem (comportamento antigo)
+    marcarAdmin(info.adminOk || !info.admin);
+    return info;
+  } catch {
+    adminConfigurado = false;
+    marcarAdmin(true);
+    return null;
+  }
+}
+
 // Todo pedido para a API leva o código salvo, se existir.
 window.fetch = (entrada, init) => {
   const url = typeof entrada === 'string' ? entrada : (entrada && entrada.url) || '';
   const codigo = lerCodigoSalvo();
-  if (codigo && url.indexOf('/api') !== -1) {
+  if ((codigo || codigoAdmin) && url.indexOf('/api') !== -1) {
     const opcoes = Object.assign({}, init);
-    opcoes.headers = Object.assign({}, opcoes.headers, { 'x-codigo': codigo });
-    return fetchSemCodigo(entrada, opcoes);
+    opcoes.headers = Object.assign({}, opcoes.headers);
+    if (codigo) opcoes.headers['x-codigo'] = codigo;
+    if (codigoAdmin) opcoes.headers['x-admin'] = codigoAdmin;
+    return fetchSemCodigo(entrada, opcoes).then(resposta => {
+      // 403 = ação de administrador sem código válido: avisa sem quebrar a tela
+      if (resposta.status === 403 && adminConfigurado) {
+        aviso('Só o administrador pode fazer isso. Entre com o código de admin em Ajustes → Administração.', 'Erro');
+      }
+      return resposta;
+    });
   }
   return fetchSemCodigo(entrada, init);
 };
@@ -2130,6 +2335,7 @@ async function garantirAcesso() {
 
 (async function subir() {
   await garantirAcesso();
+  await conferirAdmin();
   iniciarApp();
 })();
 </script>
