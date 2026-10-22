@@ -1,0 +1,20 @@
+# O que NÃO vai para a Vercel (o deploy lê este arquivo)
+.env
+.env.local
+.env.*.local
+
+node_modules
+perfis.json
+licoes.json
+*.bak
+*.tmp
+
+backups
+.vscode
+.idea
+.git
+.vercel/cache
+
+# documentação local (não precisa subir)
+CONTINUAR-AMANHA.md
+README-DEPLOY.md

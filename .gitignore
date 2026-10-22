@@ -1,0 +1,25 @@
+# dependências
+node_modules/
+
+# segredos (nunca subir para o GitHub)
+.env
+.env.local
+.env*.local
+
+# dados locais (na nuvem quem guarda é o Supabase)
+perfis.json
+licoes.json
+*.bak
+*.tmp
+backups/
+
+# sistemas / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Vercel
+.vercel/
+
+.vercel
