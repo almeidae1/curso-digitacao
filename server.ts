@@ -84,6 +84,89 @@ app.use('/api', async (_req, _res, next) => {
 });
 
 // ---------------------------------------------------------------------------
+// Apelidos de um pedaço só.
+//
+// Em alguns deploys (Vercel) a função recebe apenas /api/<um-segmento>; rotas
+// com barra no meio davam 404 na borda. Aqui reescrevemos os caminhos achatados
+// para as rotas normais, então o app funciona mesmo nesses casos:
+//
+//   /api/perfil?id=UUID          →  /api/perfis/UUID
+//   /api/perfil-prefs            →  /api/perfis/UUID/prefs
+//   /api/teste-texto             →  /api/testes/texto
+// ---------------------------------------------------------------------------
+app.use((req, _res, next) => {
+  const url = req.url || '';
+  if (!url.startsWith('/api/')) return next();
+
+  const [caminho, busca] = url.split('?');
+  const q = new URLSearchParams(busca || '');
+  const corpo = (req.body && typeof req.body === 'object' ? req.body : {}) as Record<string, any>;
+  const id = q.get('id') || corpo.perfilId || corpo.id || '';
+  const n = q.get('n') || corpo.n || corpo.licao || '';
+  const seg = (v: string) => encodeURIComponent(String(v));
+
+  let destino: string | null = null;
+  switch (caminho) {
+    case '/api/perfil':
+      destino = id ? `/api/perfis/${seg(id)}` : null;
+      break;
+    case '/api/perfil-prefs':
+      destino = id ? `/api/perfis/${seg(id)}/prefs` : null;
+      break;
+    case '/api/perfil-treinar':
+      destino = id ? `/api/perfis/${seg(id)}/treinar` : null;
+      break;
+    case '/api/perfil-voltar':
+      destino = id ? `/api/perfis/${seg(id)}/voltar-etapa` : null;
+      break;
+    case '/api/perfil-exportar':
+      destino = id ? `/api/perfis/${seg(id)}/exportar` : null;
+      break;
+    case '/api/perfil-importar':
+      destino = '/api/perfis/importar';
+      break;
+    case '/api/teste-texto':
+      destino = '/api/testes/texto';
+      break;
+    case '/api/jogo-palavras':
+      destino = '/api/jogo/palavras';
+      break;
+    case '/api/jogo-resultado':
+      destino = '/api/jogo/resultado';
+      break;
+    case '/api/pratica-texto':
+      destino = '/api/pratica/texto';
+      break;
+    case '/api/numero':
+      destino = id ? `/api/numeros/${seg(id)}` : null;
+      break;
+    case '/api/licao-pontuacao':
+      destino = n ? `/api/licoes/${seg(n)}/pontuacao` : null;
+      break;
+    case '/api/licao':
+      destino = n ? `/api/licoes/${seg(n)}` : null;
+      break;
+    case '/api/avancado-pontuacao':
+      destino = n ? `/api/avancado/licoes/${seg(n)}/pontuacao` : null;
+      break;
+    case '/api/avancado-automatico':
+      destino = '/api/avancado/automatico';
+      break;
+    case '/api/avancado-nova':
+      destino = '/api/avancado/licoes';
+      break;
+    case '/api/config-pontuacao':
+      destino = '/api/config/pontuacao';
+      break;
+    default:
+      destino = null;
+  }
+
+  if (destino) req.url = destino + (busca ? `?${busca}` : '');
+  next();
+});
+
+// ---------------------------------------------------------------------------
 // Palavras (sem acentos). Só entram na etapa "Palavras" as que usam apenas
 // letras já aprendidas.
 // ---------------------------------------------------------------------------

@@ -536,7 +536,10 @@ async function enviar() {
     ${r.avancadoLiberado ? `<div class="sug" style="text-align:center">🎓 A aba <b>Avançado</b> foi liberada! Palavras e frases do dia a dia com tudo que você já aprendeu.</div>` : ''}
     <button id="btn">${r.concluiuTudo ? 'Repetir exercício (Enter)' : 'Próximo exercício (Enter)'}</button>`;
   $('over').classList.add('show'); $('btn').onclick = proximo; $('btn').focus();
-  if (sg) $('btn-voltar').onclick = async () => { await fetch(API + '/api/perfis/' + perfil.id + '/voltar-etapa', { method: 'POST' }); selecionar(perfil.id); };
+  if (sg) $('btn-voltar').onclick = async () => {
+    await fetch(API + '/api/perfil-voltar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ perfilId: perfil.id }) });
+    selecionar(perfil.id);
+  };
   contar($('n-wpm'), r.wpm); contar($('n-prec'), r.precisao, '%');
   if (porJev) setTimeout(() => { $('m-conf').style.width = r.confianca * 100 + '%'; $('m-flu').style.width = Math.min(r.fluencia / 2, 1) * 100 + '%'; }, 80);
   if (perfeito) festa(rapido); else { somFim(); burst(innerWidth / 2, innerHeight / 2, '#6ee7ff', 60); }
@@ -569,7 +572,7 @@ $('p-lista').onclick = async e => {
   const del = e.target.closest('[data-del]');
   if (del) {
     if (!confirm(`Excluir o perfil "${del.dataset.nome}" e todo o progresso? Não dá para desfazer.`)) return;
-    await fetch(API + '/api/perfis/' + del.dataset.del, { method: 'DELETE' });
+    await fetch(API + '/api/perfil?id=' + encodeURIComponent(del.dataset.del), { method: 'DELETE' });
     if (perfil && perfil.id === del.dataset.del) { perfil = null; apagarLocal('perfilAtual'); }
     listarPerfis(); return;
   }
@@ -587,7 +590,7 @@ async function buscarPerfil(id, tentativas = 2) {
   let ultimo = null;
   for (let i = 0; i < tentativas; i++) {
     try {
-      const resposta = await fetch(API + '/api/perfis/' + encodeURIComponent(id));
+      const resposta = await fetch(API + '/api/perfil?id=' + encodeURIComponent(id));
       const texto = await resposta.text();
       let corpo = null;
       try { corpo = texto ? JSON.parse(texto) : null; } catch { corpo = null; }
@@ -685,7 +688,7 @@ function resumoSemana(h, atividade) {
 
 async function abrirMetricas() {
   if (!perfil) return abrirPerfis();
-  const p = await (await fetch(API + '/api/perfis/' + perfil.id)).json();
+  const p = await (await fetch(API + '/api/perfil?id=' + encodeURIComponent(perfil.id))).json();
   const P = ((await (await fetch(API + '/api/painel?perfil=' + perfil.id)).json()).painel) || painel;
   const rk = await (await fetch(API + '/api/ranking')).json().catch(() => null);
   const minhaPos = rk && rk.perfis ? rk.perfis.find(x => x.id === perfil.id) : null;
@@ -778,7 +781,7 @@ $('b-met').onclick = abrirMetricas;
 
 /* ---------- lições ---------- */
 let licInfo = null;
-const putConfig = body => fetch(API + '/api/config/pontuacao', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+const putConfig = body => fetch(API + '/api/config-pontuacao', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 const ROT_STATUS = { concluida: ['Concluída', 'ok'], andamento: ['Em andamento', 'and'], bloqueada: ['Bloqueada', ''] };
 async function abrirLicoes(msg = '', erro = false) {
   if (!perfil) return abrirPerfis();
@@ -833,13 +836,13 @@ $('lic-box').onclick = async e => {
     abrirLicoes(r.ok ? 'Pontuação aplicada a todas as lições.' : (await r.json()).erro, !r.ok); carregar(); return;
   }
   if (t.dataset.treinar) {
-    const r = await fetch(API + '/api/perfis/' + perfil.id + '/treinar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ licao: Number(t.dataset.treinar) }) });
+    const r = await fetch(API + '/api/perfil-treinar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ perfilId: perfil.id, licao: Number(t.dataset.treinar) }) });
     if (r.ok) selecionar(perfil.id); else abrirLicoes((await r.json()).erro, true);
     return;
   }
   if (t.dataset.dellic) {
     if (!confirm('Excluir a lição ' + t.dataset.dellic + '? Os perfis que estavam nela voltam para a anterior.')) return;
-    const r = await fetch(API + '/api/licoes/' + t.dataset.dellic, { method: 'DELETE' });
+    const r = await fetch(API + '/api/licao?n=' + encodeURIComponent(t.dataset.dellic), { method: 'DELETE' });
     await abrirLicoes(r.ok ? 'Lição excluída.' : (await r.json()).erro, !r.ok); if (r.ok) carregar(); return;
   }
   if (t.id === 'l-criar') {
@@ -853,7 +856,7 @@ $('lic-box').onclick = async e => {
 $('lic-box').onchange = async e => {
   if (!e.target.classList.contains('pont')) return;
   const row = e.target.closest('.lic'), prec = Number(row.querySelector('[data-campo=prec]').value), wpm = Number(row.querySelector('[data-campo=wpm]').value);
-  const r = await fetch(API + '/api/licoes/' + row.dataset.n + '/pontuacao', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ precisaoMin: prec, wpmMin: wpm }) });
+  const r = await fetch(API + '/api/licao-pontuacao', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ n: Number(row.dataset.n), precisaoMin: prec, wpmMin: wpm }) });
   const m = $('l-msg'); m.className = 'msg' + (r.ok ? '' : ' err'); m.textContent = r.ok ? 'Pontuação salva.' : (await r.json()).erro;
 };
 
@@ -892,22 +895,22 @@ $('av-box').onclick = async e => {
   const t = e.target.closest('button'); if (!t) return;
   if (t.id === 'a-fechar') { $('av').classList.remove('show'); return; }
   if (t.dataset.auto !== undefined) {
-    const r = await fetch(API + '/api/avancado/automatico', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ automatico: t.dataset.auto === '1' }) });
+    const r = await fetch(API + '/api/avancado-automatico', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ automatico: t.dataset.auto === '1' }) });
     abrirAvancado(r.ok ? (t.dataset.auto === '1' ? 'Automático ligado.' : 'Automático desligado.') : (await r.json()).erro, !r.ok); return;
   }
   if (t.id === 'a-add') {
-    const r = await fetch(API + '/api/avancado/licoes', { method: 'POST' }); const j = await r.json();
+    const r = await fetch(API + '/api/avancado-nova', { method: 'POST' }); const j = await r.json();
     abrirAvancado(r.ok ? `Avançado ${j.numero} adicionado.` : j.erro, !r.ok); return;
   }
   if (t.dataset.treinarAv) {
-    const r = await fetch(API + '/api/perfis/' + perfil.id + '/treinar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ licao: Number(t.dataset.treinarAv), trilha: 'a' }) });
+    const r = await fetch(API + '/api/perfil-treinar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ perfilId: perfil.id, licao: Number(t.dataset.treinarAv), trilha: 'a' }) });
     if (r.ok) selecionar(perfil.id); else abrirAvancado((await r.json()).erro, true);
   }
 };
 $('av-box').onchange = async e => {
   if (!e.target.classList.contains('pont-av')) return;
   const row = e.target.closest('.lic'), prec = Number(row.querySelector('[data-campo=prec]').value), wpm = Number(row.querySelector('[data-campo=wpm]').value);
-  const r = await fetch(API + '/api/avancado/licoes/' + row.dataset.n + '/pontuacao', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ precisaoMin: prec, wpmMin: wpm }) });
+  const r = await fetch(API + '/api/avancado-pontuacao', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ n: Number(row.dataset.n), precisaoMin: prec, wpmMin: wpm }) });
   const m = $('a-msg'); m.className = 'msg' + (r.ok ? '' : ' err'); m.textContent = r.ok ? 'Pontuação salva.' : (await r.json()).erro;
 };
 
@@ -1086,18 +1089,18 @@ async function iniciarCronometrado(origem, exercicioId) {
   if (!perfil) return abrirPerfis();
   try {
     if (origem === 'numeros') {
-      const e = await (await fetch(API + '/api/numeros/' + encodeURIComponent(exercicioId))).json();
+      const e = await (await fetch(API + '/api/numero?id=' + encodeURIComponent(exercicioId))).json();
       abrirSessao({ tipo: 'numeros', origem: 'numeros', exercicioId, texto: e.texto, titulo: e.titulo, segundos: 0 });
       return;
     }
     if (origem === '1min' || origem === '30s') {
-      const j = await (await fetch(API + '/api/testes/texto?perfil=' + perfil.id + '&tipo=' + origem)).json();
+      const j = await (await fetch(API + '/api/teste-texto?perfil=' + perfil.id + '&tipo=' + origem)).json();
       abrirSessao({ tipo: 'teste', origem: j.tipo, texto: j.texto, titulo: j.titulo, segundos: j.segundos });
       aviso(origem === '1min' ? 'O relógio começa na primeira tecla.' : 'Corra contra o seu melhor: mesma duração, mesma régua.', origem === '1min' ? 'Teste de 1 minuto' : 'Corrida de 30s');
       return;
     }
     const q = origem === 'aquecimento' || origem === 'fracas' ? origem : 'revisao';
-    const j = await (await fetch(API + '/api/pratica/texto?perfil=' + perfil.id + '&origem=' + q)).json();
+    const j = await (await fetch(API + '/api/pratica-texto?perfil=' + perfil.id + '&origem=' + q)).json();
     abrirSessao({ tipo: 'pratica', origem: q, texto: j.texto, titulo: j.titulo, segundos: j.segundos });
   } catch {
     aviso('Servidor desligado. Rode "npm run dev" e atualize a página.', 'Sem conexão');
@@ -1390,8 +1393,8 @@ function baixarJson(nome, dados) {
 
 async function salvarPrefs(parcial) {
   try {
-    const r = await fetch(API + '/api/perfis/' + perfil.id + '/prefs', {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(parcial)
+    const r = await fetch(API + '/api/perfil-prefs', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ perfilId: perfil.id, ...parcial })
     });
     const j = await r.json();
     if (!r.ok) return { ok: false, erro: j.erro || 'Falha ao salvar.' };
@@ -1523,7 +1526,7 @@ function abrirAjustes(msg, erro) {
 
   $('aj-exportar').onclick = async () => {
     try {
-      const dados = await (await fetch(API + '/api/perfis/' + perfil.id + '/exportar')).json();
+      const dados = await (await fetch(API + '/api/perfil-exportar?id=' + encodeURIComponent(perfil.id))).json();
       const nome = 'perfil-' + perfil.nome.replace(/[^\w\-]+/g, '_') + '-' + diaLocal() + '.json';
       baixarJson(nome, dados);
       msgAjustes('Backup do perfil baixado.');
@@ -1543,7 +1546,7 @@ function abrirAjustes(msg, erro) {
       return msgAjustes('Esse arquivo não é um JSON válido.', true);
     }
     try {
-      const r = await fetch(API + '/api/perfis/importar', {
+      const r = await fetch(API + '/api/perfil-importar', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados)
       });
       const j = await r.json();
@@ -1624,7 +1627,7 @@ function abrirJogo() {
 async function jogoPreparar(mod) {
   let j;
   try {
-    j = await (await fetch(API + '/api/jogo/palavras?perfil=' + perfil.id)).json();
+    j = await (await fetch(API + '/api/jogo-palavras?perfil=' + perfil.id)).json();
   } catch {
     aviso('Servidor desligado. Rode "npm run dev" e atualize a página.', 'Sem conexão');
     return;
@@ -1953,13 +1956,13 @@ async function jogoEnviarResultado() {
   };
   let j = null;
   try {
-    const res = await fetch(API + '/api/jogo/resultado', {
+    const res = await fetch(API + '/api/jogo-resultado', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo)
     });
     if (res.ok) j = await res.json();
-    else guardarFila('/api/jogo/resultado', corpo);
+    else guardarFila('/api/jogo-resultado', corpo);
   } catch {
-    guardarFila('/api/jogo/resultado', corpo);
+    guardarFila('/api/jogo-resultado', corpo);
   }
   if (j && j.painel) aplicarPainel(j.painel);
   if (j && j.conquistasNovas && j.conquistasNovas.length) setTimeout(() => mostrarConquistas(j.conquistasNovas), 600);
