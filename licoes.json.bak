@@ -1,0 +1,110 @@
+{
+  "modo": "manual",
+  "padrao": {
+    "precisaoMin": 85,
+    "wpmMin": 15
+  },
+  "avAutomatico": false,
+  "licoes": [
+    {
+      "numero": 1,
+      "titulo": "Teclas Guia F e J (Indicadores)",
+      "letras": "fj",
+      "precisaoMin": 95,
+      "wpmMin": 25,
+      "fixa": true
+    },
+    {
+      "numero": 2,
+      "titulo": "Posição de Base Esquerda (A S D F)",
+      "letras": "asdf",
+      "precisaoMin": 95,
+      "wpmMin": 25,
+      "fixa": true
+    },
+    {
+      "numero": 3,
+      "titulo": "Posição de Base Direita (J K L Ç)",
+      "letras": "jklç",
+      "precisaoMin": 95,
+      "wpmMin": 25,
+      "fixa": true
+    },
+    {
+      "numero": 4,
+      "titulo": "Linha de Base Completa (Ambas as Mãos)",
+      "letras": "asdfjklç",
+      "precisaoMin": 95,
+      "wpmMin": 25,
+      "fixa": true
+    },
+    {
+      "numero": 5,
+      "titulo": "Teclas Q W E R",
+      "letras": "qwer",
+      "precisaoMin": 92,
+      "wpmMin": 25,
+      "fixa": false
+    },
+    {
+      "numero": 6,
+      "titulo": "Teclas U I O P",
+      "letras": "uiop",
+      "precisaoMin": 95,
+      "wpmMin": 25,
+      "fixa": false
+    },
+    {
+      "numero": 7,
+      "titulo": "Teclas Q W E R T",
+      "letras": "qwert",
+      "precisaoMin": 95,
+      "wpmMin": 25,
+      "fixa": false
+    },
+    {
+      "numero": 8,
+      "titulo": "Teclas Y U I O P",
+      "letras": "yuiop",
+      "precisaoMin": 95,
+      "wpmMin": 25,
+      "fixa": false
+    },
+    {
+      "numero": 9,
+      "titulo": "Teclas Z X C",
+      "letras": "zxc",
+      "precisaoMin": 95,
+      "wpmMin": 25,
+      "fixa": false
+    },
+    {
+      "numero": 10,
+      "titulo": "Teclas V B N M",
+      "letras": "vbnm",
+      "precisaoMin": 95,
+      "wpmMin": 25,
+      "fixa": false
+    }
+  ],
+  "avLicoes": [
+    {
+      "numero": 1,
+      "precisaoMin": 90,
+      "wpmMin": 20,
+      "auto": false
+    },
+    {
+      "numero": 2,
+      "precisaoMin": 90,
+      "wpmMin": 22,
+      "auto": false
+    },
+    {
+      "numero": 3,
+      "precisaoMin": 92,
+      "wpmMin": 25,
+      "auto": false
+    }
+  ]
+}

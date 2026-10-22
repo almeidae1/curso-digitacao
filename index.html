@@ -1,0 +1,2092 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Curso de Digitação JEV</title>
+<style>
+:root{
+  --bg1:#0a0e23; --bg2:#1b1146; --glass:rgba(255,255,255,.06); --line:rgba(255,255,255,.12);
+  --text:#eef1ff; --mute:#9aa3c7; --accent:#6ee7ff; --ok:#4ade80; --bad:#ff5a6e;
+  --LP:#ff5d7a; --LR:#ff9f4a; --LM:#ffd84a; --LI:#5ff0a0; --RI:#4fe3d6; --RM:#ffd84a; --RR:#ff9f4a; --RP:#ff5d7a; --TH:#b57bff;
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:'Segoe UI',system-ui,sans-serif;color:var(--text);
+  background:radial-gradient(1200px 600px at 80% -10%,#3a1f7a55,transparent),radial-gradient(900px 500px at 0% 110%,#0b5a8a44,transparent),linear-gradient(160deg,var(--bg1),var(--bg2));
+  display:flex;justify-content:center;padding:28px 16px}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:30}
+.app{width:100%;max-width:980px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+h1{font-size:22px;margin:0;font-weight:700;letter-spacing:.3px}
+.badge{padding:8px 16px;border-radius:999px;background:var(--glass);border:1px solid var(--line);color:var(--accent);font-weight:600;font-size:14px;backdrop-filter:blur(8px)}
+.bar{height:6px;border-radius:6px;background:var(--glass);overflow:hidden;margin-bottom:18px}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),#b57bff);box-shadow:0 0 12px var(--accent);transition:width .25s ease}
+.stats{display:flex;gap:12px;margin-bottom:16px}
+.stat{flex:1;padding:12px 16px;border-radius:14px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px)}
+.stat small{display:block;color:var(--mute);font-size:12px;margin-bottom:2px}
+.stat b{font-size:26px;font-variant-numeric:tabular-nums;display:inline-block}
+.pop{animation:pop .25s ease}
+@keyframes pop{50%{transform:scale(1.35);color:var(--accent)}}
+.card{padding:28px;border-radius:22px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(14px);box-shadow:0 30px 60px rgba(0,0,0,.35)}
+.display{font-family:Consolas,'Courier New',monospace;font-size:clamp(24px,5vw,40px);letter-spacing:4px;text-align:center;padding:30px 12px;border-radius:16px;background:rgba(5,8,22,.55);border:1px solid var(--line);word-break:break-all}
+.display.erro{animation:shake .3s;border-color:var(--bad);box-shadow:0 0 0 3px #ff5a6e33,inset 0 0 40px #ff5a6e22}
+@keyframes shake{20%{transform:translateX(-10px)}40%{transform:translateX(9px)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
+.display span{display:inline-block;transition:color .15s}
+.c-ok{color:var(--ok);text-shadow:0 0 14px #4ade8088}
+.c-now{color:#fff;border-bottom:4px solid var(--accent);animation:blink 1s infinite;text-shadow:0 0 18px var(--accent)}
+@keyframes blink{50%{border-color:transparent}}
+.hint{text-align:center;color:var(--mute);margin:16px 0 10px;min-height:24px}
+.hint b{color:var(--accent)}
+.kb{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:6px}
+.row{display:flex;gap:6px}
+.row:nth-child(2){margin-left:22px}.row:nth-child(3){margin-left:50px}
+.k{width:clamp(28px,5.6vw,50px);height:clamp(30px,5.6vw,50px);border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;text-transform:uppercase;
+  background:linear-gradient(#2c3563,#222a50);border-bottom:3px solid #141a38;color:#cfd6ff;position:relative;transition:transform .1s,background .1s}
+.k::after{content:'';position:absolute;left:20%;right:20%;top:0;height:3px;border-radius:0 0 3px 3px;background:var(--c,transparent)}
+.k.space{width:min(300px,52vw)}
+.k.foco{background:var(--c);color:#0a0e23;transform:translateY(-4px);box-shadow:0 6px 22px var(--c)}
+.k.press{transform:translateY(2px)}
+.k.errada{background:var(--bad);color:#fff}
+.hands{display:flex;justify-content:center;gap:90px;margin-top:20px}
+.hand{display:flex;align-items:flex-end;gap:7px;height:96px}
+.f{width:22px;border-radius:12px 12px 6px 6px;background:#2a3262;border:1px solid var(--line);transition:all .15s}
+.f.on{background:var(--c);box-shadow:0 0 22px var(--c);transform:translateY(-8px)}
+.hand.l .f:nth-child(1){height:50px}.hand.l .f:nth-child(2){height:68px}.hand.l .f:nth-child(3){height:80px}.hand.l .f:nth-child(4){height:72px}.hand.l .f:nth-child(5){height:42px;margin-left:6px}
+.hand.r .f:nth-child(1){height:42px;margin-right:6px}.hand.r .f:nth-child(2){height:72px}.hand.r .f:nth-child(3){height:80px}.hand.r .f:nth-child(4){height:68px}.hand.r .f:nth-child(5){height:50px}
+.over{position:fixed;inset:0;background:rgba(5,8,22,.7);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:10;padding:16px}
+.over.show{display:flex}
+.res{width:100%;max-width:460px;padding:28px;border-radius:22px;background:#161c42;border:1px solid var(--line);text-align:center;animation:up .35s ease}
+@keyframes up{from{transform:translateY(24px);opacity:0}}
+.res h3{margin:0 0 18px;font-size:19px;line-height:1.35}
+.big{display:flex;gap:14px;margin-bottom:16px}
+.big div{flex:1;padding:14px;border-radius:14px;background:var(--glass)}
+.big b{font-size:38px;display:block;font-variant-numeric:tabular-nums}.big small{color:var(--mute)}
+.jev{text-align:left;padding:14px;border-radius:14px;background:rgba(110,231,255,.07);border:1px solid #6ee7ff33;font-size:14px;color:var(--mute);line-height:1.7}
+.jev b{color:var(--text)}
+.meter{height:6px;border-radius:6px;background:var(--glass);margin:2px 0 6px;overflow:hidden}.meter i{display:block;height:100%;background:var(--accent);width:0;transition:width .9s ease}
+button{margin-top:18px;padding:13px 26px;border:0;border-radius:12px;font-weight:700;font-size:16px;cursor:pointer;color:#0a0e23;background:linear-gradient(90deg,var(--accent),#b57bff);transition:transform .1s,box-shadow .2s}
+button:hover{box-shadow:0 8px 26px #6ee7ff55}button:active{transform:scale(.97)}
+button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.mute{position:fixed;right:14px;bottom:14px;z-index:6;margin:0;padding:8px 12px;font-size:13px;background:var(--glass);color:var(--text);border:1px solid var(--line)}
+.acoes{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.mini{margin:0;padding:8px 14px;font-size:14px;background:var(--glass);color:var(--text);border:1px solid var(--line)}
+.mini:hover{box-shadow:none;background:rgba(255,255,255,.12)}
+.mini.x{color:var(--bad);padding:6px 10px;font-size:13px}
+.box{width:100%;max-width:520px;padding:28px;border-radius:22px;background:#161c42;border:1px solid var(--line);animation:up .35s ease;max-height:92vh;overflow:auto}
+.box.largo{max-width:780px}
+.box h2{margin:0 0 6px;font-size:22px}.box>p{color:var(--mute);margin:0 0 18px}
+.pf{display:flex;align-items:center;gap:14px;padding:12px;border-radius:14px;background:var(--glass);border:1px solid var(--line);margin-bottom:10px;cursor:pointer;transition:border-color .15s}
+.pf:hover{border-color:var(--accent)}
+.av{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;color:#0a0e23;font-size:18px;flex:none}
+.pn{flex:1;display:flex;flex-direction:column}.pn small{color:var(--mute)}
+.novo{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+.novo input{flex:1;min-width:150px;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(5,8,22,.6);color:var(--text);font-size:16px}
+.novo input:focus-visible{outline:2px solid var(--accent)}
+.novo button{margin:0}
+.cores{display:flex;gap:8px}.cores i{width:24px;height:24px;border-radius:50%;cursor:pointer;border:3px solid transparent}.cores i.sel{border-color:#fff}
+.vazio{color:var(--mute);text-align:center;padding:10px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:16px 0}
+.cards div{padding:14px;border-radius:14px;background:var(--glass)}.cards b{font-size:26px;display:block}.cards small{color:var(--mute)}
+.graf{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.graf div{padding:14px;border-radius:14px;background:var(--glass)}.graf small{color:var(--mute)}.graf svg{width:100%;display:block;margin-top:6px}
+.sec{margin:22px 0 8px;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}th{color:var(--mute);font-weight:600}
+.box .kb .k{cursor:default}
+/* teclas em treino, 100% e modo de pontuação */
+.treino{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin:-6px 0 12px;color:var(--mute);font-size:13px}
+.treino[hidden]{display:none}
+.chip{padding:4px 11px;border-radius:999px;border:1px solid #ffd84a99;background:#ffd84a1a;color:#ffd84a;font-size:13px}
+.chip.off{opacity:.45;border-style:dashed}
+.badge.fogo{color:#ffb347;border-color:#ffb34799}
+.k.treino-k{outline:2px solid var(--accent);outline-offset:1px}
+.k.onda{transform:translateY(-7px);background:var(--c,#6ee7ff)!important;color:#0a0e23;box-shadow:0 8px 24px var(--c,#6ee7ff)}
+.over.perfeito{background:rgba(5,8,22,.5);backdrop-filter:blur(2px);overflow:hidden}
+.over.perfeito::before{content:'';position:absolute;inset:-50%;pointer-events:none;background:conic-gradient(transparent,#ffd84a33,transparent 20%,#6ee7ff33,transparent 45%,#ff5d7a33,transparent 70%,#b57bff33,transparent);animation:giro 6s linear infinite}
+@keyframes giro{to{transform:rotate(360deg)}}
+.res{position:relative;z-index:1}
+.res.perfeito{border-color:#ffd84a;animation:up .35s ease,neon 1.4s ease-in-out infinite alternate}
+.res.perfeito.rapido{border-color:#6ee7ff;animation:up .35s ease,neon2 1.1s ease-in-out infinite alternate}
+@keyframes neon{from{box-shadow:0 0 18px #ffd84a66,0 0 40px #ffd84a33}to{box-shadow:0 0 36px #ffd84acc,0 0 90px #ffd84a66}}
+@keyframes neon2{from{box-shadow:0 0 22px #6ee7ff66,0 0 50px #ff5d7a44}to{box-shadow:0 0 44px #6ee7ffcc,0 0 110px #ff5d7a77}}
+.selo{font-weight:900;font-size:26px;letter-spacing:2px;margin-bottom:12px;background:linear-gradient(90deg,#ffd84a,#ff9f4a,#ff5d7a,#b57bff);-webkit-background-clip:text;background-clip:text;color:transparent;animation:selo .7s cubic-bezier(.2,1.6,.4,1)}
+@keyframes selo{from{transform:scale(.3);opacity:0}}
+.sug{margin:12px 0 0;padding:12px;border-radius:12px;border:1px dashed #ffd84a99;color:var(--text);font-size:14px;line-height:1.5;text-align:left}
+.sug button{margin-top:8px}
+.modo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 12px;color:var(--mute);font-size:14px}
+.mini.on{background:var(--accent);color:#0a0e23;border-color:var(--accent)}
+.lic input:disabled{opacity:.5}
+.lic{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px;border-radius:14px;background:var(--glass);border:1px solid var(--line);margin-bottom:10px}
+.lic.atual{border-color:var(--accent)}.lic.bloq{opacity:.55}
+.lic .pn{min-width:200px}.lic .pn small{line-height:1.5}
+.lic label{display:flex;flex-direction:column;font-size:12px;color:var(--mute);gap:3px}
+.lic input{width:74px;padding:7px 8px;border-radius:10px;border:1px solid var(--line);background:rgba(5,8,22,.6);color:var(--text);font-size:15px}
+.tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;border:1px solid var(--line);color:var(--mute)}
+.tag.ok{color:var(--ok);border-color:#4ade8066}.tag.and{color:var(--accent);border-color:#6ee7ff66}
+.msg{min-height:20px;margin:6px 0 0;color:var(--mute);font-size:14px}.msg.err{color:var(--bad)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:640px){.hands{gap:30px}.row:nth-child(2),.row:nth-child(3){margin-left:0}}
+/* ---------- painel do dia (ofensiva + meta) ---------- */
+.dia{margin:-8px 0 16px;padding:12px 16px;border-radius:14px;background:var(--glass);border:1px solid var(--line)}
+.dia[hidden]{display:none}
+.dia.ok{border-color:#4ade8066;box-shadow:inset 0 0 24px #4ade8011}
+.dia-topo{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:14px}
+.dia-topo b{color:#ffb347;font-size:15px}
+.dia-topo span{color:var(--mute);font-variant-numeric:tabular-nums}
+.meta-barra{height:8px;border-radius:8px;background:rgba(5,8,22,.6);overflow:hidden;margin-top:8px}
+.meta-barra i{display:block;height:100%;width:0;border-radius:8px;background:linear-gradient(90deg,#ffb347,#ffd84a,#4ade80);transition:width .5s ease}
+/* ---------- cronômetro dos testes ---------- */
+.relogio{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 10px;padding:8px 14px;border-radius:12px;background:rgba(110,231,255,.08);border:1px solid #6ee7ff44}
+.relogio[hidden]{display:none}
+.relogio b{font-size:24px;font-variant-numeric:tabular-nums;color:var(--accent)}
+.relogio span{font-size:13px;color:var(--mute)}
+.relogio.urgente{border-color:#ff5a6e88;background:#ff5a6e14;animation:pisca .6s infinite alternate}
+@keyframes pisca{to{background:#ff5a6e33}}
+/* ---------- avisos rápidos ---------- */
+.toasts{position:fixed;right:14px;top:14px;z-index:40;display:flex;flex-direction:column;gap:8px;max-width:300px}
+.toast{padding:10px 14px;border-radius:12px;background:#161c42ee;border:1px solid var(--line);box-shadow:0 12px 30px rgba(0,0,0,.4);font-size:14px;animation:up .25s ease}
+.toast b{color:var(--accent)}
+/* ---------- testes e prática ---------- */
+.t-card{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px;border-radius:14px;background:var(--glass);border:1px solid var(--line);margin-bottom:10px}
+.t-card .pn{min-width:220px}
+.t-card .ic{font-size:26px;line-height:1}
+.t-card .rec{font-size:13px;color:var(--mute);white-space:nowrap}
+.t-card .rec b{color:#ffd84a}
+/* ---------- jogo das palavras ---------- */
+.jogo-caixa{width:100%;max-width:940px;padding:20px;border-radius:22px;background:#11173a;border:1px solid var(--line);animation:up .3s ease;max-height:94vh;overflow:auto}
+.jg-setup h2{margin:0 0 6px;font-size:22px}
+.jg-setup p{color:var(--mute);margin:0 0 14px;line-height:1.6}
+.jg-modos{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.jg-modos .mini.on{background:var(--accent);color:#0a0e23}
+.jg-topo{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.jg-info{display:flex;flex-direction:column;align-items:center;padding:6px 12px;border-radius:12px;background:var(--glass);border:1px solid var(--line);min-width:64px}
+.jg-info b{font-size:20px;font-variant-numeric:tabular-nums}
+.jg-info small{font-size:11px;color:var(--mute)}
+.jg-topo #jg-pausar,.jg-topo #jg-sair{margin:0}
+.jg-vida{height:10px;border-radius:10px;background:rgba(5,8,22,.7);overflow:hidden;margin-bottom:10px;border:1px solid var(--line)}
+.jg-vida i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ff5a6e,#ffd84a,#4ade80);transition:width .2s ease}
+.arena{position:relative;width:100%;height:min(62vh,520px);border-radius:18px;overflow:hidden;background:radial-gradient(circle at 50% 50%,#1b2350,#0a0e23 70%);border:1px solid var(--line)}
+.base{position:absolute;left:50%;top:50%;width:96px;height:96px;margin:-48px 0 0 -48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;letter-spacing:1px;color:#0a0e23;background:linear-gradient(160deg,var(--accent),#b57bff);box-shadow:0 0 30px #6ee7ff88,inset 0 0 20px #ffffff44;z-index:2}
+.palavra{position:absolute;left:0;top:0;padding:6px 10px;border-radius:10px;background:#232c5e;border:1px solid #ffffff22;font-family:Consolas,'Courier New',monospace;font-weight:700;font-size:20px;letter-spacing:1px;white-space:nowrap;will-change:transform;z-index:3}
+.arena.grande .palavra{font-size:25px;padding:8px 13px}
+.palavra span{color:#cfd6ff}
+.palavra span.ok{color:#4ade80}
+.palavra span.atual{color:#fff;text-shadow:0 0 12px var(--accent);border-bottom:2px solid var(--accent)}
+.palavra.foco{border-color:var(--accent);box-shadow:0 0 0 2px #6ee7ff44,0 0 26px #6ee7ff33}
+.palavra.erro{animation:shake .25s;border-color:var(--bad)}
+.jg-dica{margin-top:10px;font-size:13px;color:var(--mute);text-align:center;min-height:20px}
+.jg-aviso{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;padding:16px 22px;border-radius:16px;background:#0a0e23e6;border:1px solid var(--line);text-align:center;font-weight:700;line-height:1.6}
+.jg-aviso small{display:block;color:var(--mute);font-weight:400;margin-top:4px}
+.jg-fim{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#0a0e23dd;z-index:6;padding:16px}
+.jg-fim .res{max-width:420px}
+/* ---------- ranking ---------- */
+.rank{width:100%;border-collapse:collapse;font-size:14px}
+.rank th{color:var(--mute);font-weight:600;text-align:left;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.rank td{padding:8px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.rank tr.eu td{background:rgba(110,231,255,.07)}
+.rank .pos{font-weight:800;color:var(--accent)}
+.rank .av{width:26px;height:26px;font-size:13px}
+/* ---------- conquistas ---------- */
+.conquistas{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:8px}
+.cq{padding:10px;border-radius:12px;background:var(--glass);border:1px solid var(--line);font-size:12px;line-height:1.4}
+.cq.off{opacity:.35;filter:grayscale(1)}
+.cq b{display:block;font-size:13px;margin-bottom:2px}
+.cq .ic{font-size:18px}
+/* ---------- constância (calendário) ---------- */
+.heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:3px;margin-top:10px;overflow-x:auto;padding-bottom:4px}
+.heat i{width:13px;height:13px;border-radius:3px;background:rgba(255,255,255,.06);display:block}
+.heat i[data-n="1"]{background:#14532d}
+.heat i[data-n="2"]{background:#166534}
+.heat i[data-n="3"]{background:#22c55e}
+.heat i[data-n="4"]{background:#4ade80}
+/* ---------- ajustes ---------- */
+.aj{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px;border-radius:14px;background:var(--glass);border:1px solid var(--line);margin-bottom:10px}
+.aj .pn{min-width:200px}
+.aj label{display:flex;flex-direction:column;font-size:12px;color:var(--mute);gap:3px}
+.aj input,.aj select{padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:rgba(5,8,22,.6);color:var(--text);font-size:15px}
+.aj input[type=number]{width:80px}
+/* ---------- cartões extras nas métricas ---------- */
+.sec2{margin:22px 0 8px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.sec2 small{color:var(--mute);font-weight:400}
+.duas{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.duas>div{padding:14px;border-radius:14px;background:var(--glass)}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="app">
+  <div class="top"><h1>Curso de Digitação JEV</h1><div class="acoes">
+    <button class="mini" id="b-lic">Lições</button>
+    <button class="mini" id="b-av">Avançado</button>
+    <button class="mini" id="b-jogo">Jogo</button>
+    <button class="mini" id="b-testes">Testes</button>
+    <button class="mini" id="b-perfil">Perfil</button>
+    <button class="mini" id="b-met">Métricas</button>
+    <button class="mini" id="b-rank">Ranking</button>
+    <button class="mini" id="b-ajustes" title="Ajustes, backup e importação" aria-label="Ajustes">⚙</button>
+    <div class="badge fogo" id="streak" hidden title="Dias seguidos treinando">🔥 0</div>
+    <div class="badge fogo" id="perfeitos" hidden title="Exercícios perfeitos (100%) seguidos">⭐ 0</div>
+    <div class="badge" id="nivel">Carregando...</div>
+  </div></div>
+  <div class="bar"><i id="prog"></i></div>
+  <div class="dia" id="dia" hidden>
+    <div class="dia-topo"><b id="dia-ofensiva">—</b><span id="dia-meta">Meta de hoje</span></div>
+    <div class="meta-barra"><i id="dia-barra"></i></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><small>Combo</small><b id="combo">0</b></div>
+    <div class="stat"><small>Melhor combo</small><b id="melhor">0</b></div>
+    <div class="stat"><small>Precisão</small><b id="prec">100%</b></div>
+  </div>
+  <div class="treino" id="treino" hidden></div>
+  <div class="card">
+    <div class="relogio" id="relogio" hidden><b id="relogio-txt">60s</b><span id="relogio-tipo">tempo</span></div>
+    <div class="display" id="texto">...</div>
+    <div class="hint" id="dica">Use o dedo: <b id="dedo">-</b></div>
+    <div class="kb" id="kb"></div>
+    <div class="hands">
+      <div class="hand l" id="mao-l"></div>
+      <div class="hand r" id="mao-r"></div>
+    </div>
+  </div>
+</div>
+
+<div class="over" id="perfis"><div class="box">
+  <h2>Quem vai treinar?</h2><p>Escolha um perfil para continuar de onde parou.</p>
+  <div id="p-lista"></div>
+  <div class="novo"><input id="p-nome" maxlength="20" placeholder="Nome do novo perfil" aria-label="Nome do novo perfil"><div class="cores" id="p-cores"></div><button id="p-criar">Criar perfil</button></div>
+</div></div>
+<div class="over" id="met"><div class="box largo" id="met-box"></div></div>
+<div class="over" id="lic"><div class="box largo" id="lic-box"></div></div>
+<div class="over" id="av"><div class="box largo" id="av-box"></div></div>
+<div class="over" id="over"><div class="res" id="res"></div></div>
+<div class="over" id="revisao"><div class="box" id="revisao-box"></div></div>
+<div class="over" id="testes"><div class="box largo" id="testes-box"></div></div>
+<div class="over" id="jogo"><div class="jogo-caixa" id="jogo-box"></div></div>
+<div class="over" id="rank"><div class="box largo" id="rank-box"></div></div>
+<div class="over" id="ajustes"><div class="box largo" id="ajustes-box"></div></div>
+<div class="over" id="acesso"><div class="box">
+  <h2>Entrar</h2>
+  <p>Este curso está protegido por um código de acesso. Peça o código para quem te convidou.</p>
+  <div class="novo"><input id="ac-codigo" placeholder="Código de acesso" autocomplete="off" aria-label="Código de acesso"><button id="ac-entrar">Entrar</button></div>
+  <div class="msg err" id="ac-msg" role="status"></div>
+</div></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<button class="mute" id="mute" aria-label="Ligar ou desligar o som">Som: ligado</button>
+
+<script>
+const API = location.protocol === 'file:' ? 'http://localhost:3000' : '';
+const DEDOS = { LP:'Mínimo esquerdo', LR:'Anelar esquerdo', LM:'Médio esquerdo', LI:'Indicador esquerdo', RI:'Indicador direito', RM:'Médio direito', RR:'Anelar direito', RP:'Mínimo direito', TH:'Polegar' };
+const LINHAS = [
+  [['q','LP'],['w','LR'],['e','LM'],['r','LI'],['t','LI'],['y','RI'],['u','RI'],['i','RM'],['o','RR'],['p','RP']],
+  [['a','LP'],['s','LR'],['d','LM'],['f','LI'],['g','LI'],['h','RI'],['j','RI'],['k','RM'],['l','RR'],['ç','RP']],
+  [['z','LP'],['x','LR'],['c','LM'],['v','LI'],['b','LI'],['n','RI'],['m','RI'],[',','RM'],['.','RR']]
+];
+const MAPA = {' ':'TH'};
+const COR = d => `var(--${d})`;
+
+/* ---------- montagem do teclado e das mãos ---------- */
+const kb = document.getElementById('kb');
+LINHAS.forEach(l => {
+  const r = document.createElement('div'); r.className = 'row';
+  l.forEach(([t, d]) => { MAPA[t] = d; r.appendChild(tecla(t, t, d)); });
+  kb.appendChild(r);
+});
+const rs = document.createElement('div'); rs.className = 'row'; rs.appendChild(tecla('espaco', 'Espaço', 'TH', 'space')); kb.appendChild(rs);
+function tecla(id, rotulo, d, extra) {
+  const k = document.createElement('div');
+  k.className = 'k ' + (extra || ''); k.id = 'key-' + id; k.textContent = rotulo; k.style.setProperty('--c', COR(d)); return k;
+}
+['LP','LR','LM','LI','TH'].forEach(d => dedoEl('mao-l', d));
+['TH','RI','RM','RR','RP'].forEach(d => dedoEl('mao-r', d));
+function dedoEl(mao, d) { const f = document.createElement('div'); f.className = 'f'; f.dataset.d = d; f.style.setProperty('--c', COR(d)); document.getElementById(mao).appendChild(f); }
+
+/* ---------- som ---------- */
+let som = true, ac;
+function beep(freq, dur, tipo = 'sine', vol = .06, atraso = 0) {
+  if (!som) return;
+  ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+  const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + atraso;
+  o.type = tipo; o.frequency.value = freq; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur);
+}
+const somOk = () => beep(720 + Math.min(combo, 20) * 25, .09, 'triangle');
+const somErro = () => beep(150, .18, 'sawtooth', .05);
+const somFim = () => [523, 659, 784, 1047].forEach((f, i) => beep(f, .25, 'triangle', .07, i * .1));
+document.getElementById('mute').onclick = e => { som = !som; e.target.textContent = 'Som: ' + (som ? 'ligado' : 'desligado'); };
+
+/* ---------- partículas ---------- */
+const cv = document.getElementById('fx'), cx = cv.getContext('2d'); let ps = [];
+const ajusta = () => { cv.width = innerWidth; cv.height = innerHeight; }; ajusta(); addEventListener('resize', ajusta);
+let rodando = false;
+const reduz = () => (painel && painel.prefs && painel.prefs.reduzirMovimento) || matchMedia('(prefers-reduced-motion:reduce)').matches;
+function burst(x, y, cor, n = 16) {
+  if (reduz()) return;
+  for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, v = 1.5 + Math.random() * 3.5; ps.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 1.5, vida: 1, cor }); }
+  if (!rodando) loop();
+}
+function loop() {
+  rodando = true; cx.clearRect(0, 0, cv.width, cv.height);
+  ps.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += p.g ?? .12; p.vida -= p.d ?? .025; cx.globalAlpha = Math.min(Math.max(p.vida, 0), 1); cx.fillStyle = p.cor; cx.beginPath(); cx.arc(p.x, p.y, p.r ?? 3, 0, 6.283); cx.fill(); });
+  ps = ps.filter(p => p.vida > 0);
+  if (ps.length) requestAnimationFrame(loop); else { rodando = false; cx.globalAlpha = 1; cx.clearRect(0, 0, cv.width, cv.height); }
+}
+/* chuva de confete do topo da tela */
+function confete(ms, cores) {
+  if (reduz()) return;
+  const t = setInterval(() => {
+    for (let i = 0; i < 5; i++) ps.push({ x: Math.random() * innerWidth, y: -10, vx: (Math.random() - .5) * 1.5, vy: 1 + Math.random() * 2, g: .02, d: .006, r: 2 + Math.random() * 3, vida: 3, cor: cores[Math.floor(Math.random() * cores.length)] });
+    if (!rodando) loop();
+  }, 60);
+  setTimeout(() => clearInterval(t), ms);
+}
+/* teclado acende em onda, tecla por tecla */
+function ondaTeclado() {
+  if (reduz()) return;
+  document.querySelectorAll('#kb .k').forEach((k, i) => { setTimeout(() => { k.classList.add('onda'); setTimeout(() => k.classList.remove('onda'), 420); }, i * 28); });
+}
+const somPerfeito = rapido => {
+  const notas = rapido ? [523, 659, 784, 1047, 1319, 1568, 2093, 2637] : [523, 659, 784, 1047, 1319, 1568];
+  notas.forEach((f, i) => beep(f, .35, 'triangle', .08, i * .09));
+  [3136, 3520, 4186].forEach((f, i) => beep(f, .5, 'sine', .035, .6 + i * .12));
+};
+/* festa dos 100%: fogos, confete, luzes e onda no teclado */
+function festa(rapido) {
+  somPerfeito(rapido); ondaTeclado();
+  const cores = ['#ff5d7a', '#ff9f4a', '#ffd84a', '#5ff0a0', '#4fe3d6', '#b57bff'];
+  const fogo = () => burst(innerWidth * (.12 + Math.random() * .76), innerHeight * (.12 + Math.random() * .45), cores[Math.floor(Math.random() * cores.length)], rapido ? 80 : 50);
+  for (let i = 0; i < (rapido ? 9 : 5); i++) setTimeout(fogo, i * (rapido ? 240 : 360));
+  confete(rapido ? 3400 : 2400, cores);
+}
+
+/* ---------- estado do exercício ---------- */
+let d = { nivel: 1, texto: '', pos: 0, eventos: [], inicio: 0, inicioChar: 0, bloqueado: false, comboMax: 0 };
+let combo = 0, melhor = 0, proximoDados = null, nErros = 0;
+let painel = null, sessao = { tipo: 'licao' }, finalizando = false, relogio = null;
+const $ = id => document.getElementById(id);
+
+async function carregar() {
+  try {
+    const j = await (await fetch(API + '/api/iniciar?perfil=' + perfil.id)).json();
+    if (j && j.erro) throw new Error(j.erro);
+    if (j.painel) aplicarPainel(j.painel);
+    iniciar(j.nivel, j.textoAlvo, j.titulo, j.fracas, j.perfeitosSeguidos);
+    reprocessarFila();
+    talvezRevisao();
+  } catch {
+    $('texto').textContent = location.protocol === 'file:'
+      ? 'Servidor desligado. Rode "npm run dev" e atualize a página.'
+      : 'Não consegui carregar a lição. Recarregue a página; se persistir, veja os logs na Vercel.';
+  }
+}
+function renderTreino(f) {
+  const el = $('treino'); f = f || [];
+  if (!f.length) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML = '<span>Teclas em treino:</span>' + f.map(t => `<span class="chip ${t.nestaEtapa ? '' : 'off'}" title="${t.nestaEtapa ? 'precisa de 3 exercícios seguidos sem erro' : 'não aparece nesta etapa'}"><b>${esc(t.tecla.toUpperCase())}</b> ${t.semErro}/3</span>`).join('');
+}
+function renderStreak(n) { const el = $('perfeitos'); el.hidden = !(n > 0); el.textContent = '⭐ ' + (n || 0); }
+function iniciar(nivel, texto, titulo, fracas, streak) {
+  sessao = { tipo: 'licao' };
+  finalizando = false;
+  pararRelogio();
+  renderTreino(fracas); renderStreak(streak);
+  d = { nivel, texto, pos: 0, eventos: [], inicio: 0, inicioChar: 0, bloqueado: false, comboMax: 0 };
+  combo = 0; nErros = 0; $('combo').textContent = 0; $('prec').textContent = '100%';
+  $('over').classList.remove('show'); $('nivel').textContent = titulo || `Nível ${nivel}`; render();
+}
+function render() {
+  $('texto').innerHTML = [...d.texto].map((c, i) => `<span class="${i < d.pos ? 'c-ok' : i === d.pos ? 'c-now' : ''}">${c === ' ' ? '&nbsp;' : c}</span>`).join('');
+  $('prog').style.width = (d.texto.length ? d.pos / d.texto.length * 100 : 0) + '%';
+  document.querySelectorAll('.k.foco').forEach(k => k.classList.remove('foco'));
+  document.querySelectorAll('.f.on').forEach(f => f.classList.remove('on'));
+  if (d.pos >= d.texto.length) return;
+  const c = d.texto[d.pos].toLowerCase(), dedo = MAPA[c];
+  const el = $('key-' + (c === ' ' ? 'espaco' : c)); if (el) el.classList.add('foco');
+  if (dedo) {
+    $('dedo').textContent = DEDOS[dedo];
+    const lado = dedo === 'TH' ? ['mao-l', 'mao-r'] : [dedo[0] === 'L' ? 'mao-l' : 'mao-r'];
+    lado.forEach(m => $(m).querySelector(`.f[data-d="${dedo}"]`).classList.add('on'));
+  }
+}
+function pulsa(id) { const e = $(id); e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); }
+
+addEventListener('keydown', e => {
+  // enquanto o jogo está aberto, as teclas são só dele (e a lição fica intacta)
+  if (typeof J !== 'undefined' && $('jogo').classList.contains('show')) {
+    if (J.ativo) { jogoTecla(e); return; }
+    if (e.key === 'Enter') {
+      const b = document.querySelector('#jg-de-novo');
+      if (b) { e.preventDefault(); b.click(); }
+      return;
+    }
+    if (e.key === 'Escape') { $('jogo').classList.remove('show'); return; }
+    if (e.key === ' ') e.preventDefault();
+    return;
+  }
+  if (e.key === 'Escape' && $('testes').classList.contains('show')) $('testes').classList.remove('show');
+  if (e.key === 'Escape' && $('rank').classList.contains('show')) $('rank').classList.remove('show');
+  if (e.key === 'Escape' && $('ajustes').classList.contains('show')) $('ajustes').classList.remove('show');
+  if (e.key === 'Escape' && $('revisao').classList.contains('show')) $('revisao').classList.remove('show');
+  if (e.key === 'Escape' && $('met').classList.contains('show')) $('met').classList.remove('show');
+  if (e.key === 'Escape' && $('lic').classList.contains('show')) $('lic').classList.remove('show');
+  if (e.key === 'Escape' && $('av').classList.contains('show')) $('av').classList.remove('show');
+  if (e.key === 'Escape' && perfil) $('perfis').classList.remove('show');
+  if (e.target.tagName === 'INPUT' || $('perfis').classList.contains('show') || $('met').classList.contains('show') || $('lic').classList.contains('show') || $('av').classList.contains('show') || $('testes').classList.contains('show') || $('rank').classList.contains('show') || $('ajustes').classList.contains('show') || $('revisao').classList.contains('show')) return;
+  if (e.key === 'Enter' && $('over').classList.contains('show')) { acaoEnter(); return; }
+  if ($('over').classList.contains('show')) return;
+  if (d.bloqueado || !d.texto || d.pos >= d.texto.length) return;
+  if (['Shift', 'Control', 'Alt', 'Tab', 'CapsLock', 'Meta', 'Dead'].includes(e.key) || e.ctrlKey || e.metaKey) return;
+  if (e.key === ' ') e.preventDefault();
+
+  const agora = Date.now();
+  if (!d.inicio) d.inicio = agora; if (!d.inicioChar) d.inicioChar = agora;
+  const tempoMs = agora - d.inicioChar; d.inicioChar = agora;
+
+  const esperada = d.texto[d.pos], ok = e.key.toLowerCase() === esperada.toLowerCase();
+  d.eventos.push({ teclaEsperada: esperada, teclaDigitada: e.key, correta: ok, tempoMs });
+
+  const kid = 'key-' + (e.key === ' ' ? 'espaco' : e.key.toLowerCase()), kel = $(kid);
+  if (kel) { kel.classList.add(ok ? 'press' : 'errada'); setTimeout(() => kel.classList.remove('press', 'errada'), 140); }
+
+  const total = d.eventos.length; if (!ok) nErros++;
+  $('prec').textContent = Math.round((total - nErros) / total * 100) + '%';
+
+  if (ok) {
+    const span = $('texto').children[d.pos], r = span.getBoundingClientRect();
+    burst(r.left + r.width / 2, r.top + r.height / 2, getComputedStyle(document.documentElement).getPropertyValue('--' + MAPA[esperada.toLowerCase()]).trim() || '#6ee7ff');
+    combo++; if (combo > melhor) { melhor = combo; $('melhor').textContent = melhor; }
+    d.comboMax = Math.max(d.comboMax || 0, combo);
+    $('combo').textContent = combo; pulsa('combo'); somOk();
+    d.pos++; render();
+    if (d.pos === d.texto.length) { d.bloqueado = true; setTimeout(finalizar, 350); }
+  } else {
+    combo = 0; $('combo').textContent = 0; somErro();
+    const t = $('texto'); t.classList.remove('erro'); void t.offsetWidth; t.classList.add('erro');
+  }
+});
+
+/* ---------- resultado + painel do Jev ---------- */
+function contar(el, alvo, sufixo = '') {
+  const t0 = performance.now(), dur = 900;
+  (function f(t) { const p = Math.min((t - t0) / dur, 1); el.textContent = Math.round(alvo * (1 - Math.pow(1 - p, 3))) + sufixo; if (p < 1) requestAnimationFrame(f); })(t0);
+}
+const rotuloFluencia = f => f < .67 ? 'hesitante' : f < 1.34 ? 'regular' : 'fluente';
+
+async function enviar() {
+  const segs = Math.max(1, Math.round((Date.now() - d.inicio) / 1000));
+  const corpo = {
+    perfilId: perfil.id, nivelAtual: d.nivel, tempoTotalSegundos: segs,
+    comboMax: d.comboMax || 0, id: novoId(), eventosTeclas: d.eventos
+  };
+  let json;
+  try {
+    const res = await fetch(API + '/api/avaliar-licao', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo)
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    json = await res.json();
+  } catch {
+    finalizando = false;
+    guardarFila('/api/avaliar-licao', corpo);
+    mostrarFalhaRede();
+    return;
+  }
+
+  const r = json.relatorio;
+  proximoDados = r;
+  if (json.painel) aplicarPainel(json.painel);
+  renderStreak(r.perfeitosSeguidos);
+  renderTreino(r.fracas);
+  const porJev = r.decididoPor === 'jev';
+  const perfeito = r.precisao === 100, rapido = perfeito && r.metaAtual.wpmMin > 0 && r.wpm >= r.metaAtual.wpmMin;
+  const selo = rapido ? 'PERFEITO E RÁPIDO!' : perfeito ? 'PERFEITO!' : '', fr = r.fracas || [], sg = r.sugestao;
+  const novos = json.novosRecordes || [];
+  const blocoRecorde = novos.length
+    ? `<div class="sug" style="text-align:center;border-style:solid"><b>🏅 Novo recorde!</b> ${esc(novos.map(x => x === 'wpm' ? 'melhor velocidade' : x === 'precisao' ? 'melhor precisão' : 'melhor combo').join(', '))}</div>`
+    : '';
+  $('res').className = 'res' + (perfeito ? ' perfeito' : '') + (rapido ? ' rapido' : '');
+  $('over').classList.toggle('perfeito', perfeito);
+  $('res').innerHTML = `
+    ${selo ? `<div class="selo">${selo}</div>` : ''}
+    ${blocoRecorde}
+    <h3>${r.mensagemFeedback}</h3>
+    <div class="big"><div><b id="n-wpm">0</b><small>palavras por minuto</small></div><div><b id="n-prec">0</b><small>precisão</small></div></div>
+    <div class="jev">
+      <div><b>${porJev ? 'Decisão do Jev' : 'Decisão pela regra fixa'}</b>${porJev ? '' : ' (o Jev não estava disponível ou com pouca confiança)'}</div>
+      ${porJev ? `<div>Confiança: <b>${Math.round(r.confianca * 100)}%</b></div><div class="meter"><i id="m-conf"></i></div>
+      <div>Fluência: <b>${rotuloFluencia(r.fluencia)}</b></div><div class="meter"><i id="m-flu"></i></div>` : ''}
+      <div>Meta: <b>${r.metaAtual.precisaoMin}%</b> de precisão e <b>${r.metaAtual.wpmMin}</b> palavras por minuto (${r.metaAtingida ? 'atingida' : 'ainda não atingida'})</div>
+      <div>Tecla para treinar: <b>${r.teclaFraca ? r.teclaFraca.toUpperCase() : 'nenhuma, sem erros'}</b></div>
+      ${fr.length ? `<div>Teclas em treino: <b>${fr.map(f => esc(f.tecla.toUpperCase()) + ' ' + f.semErro + '/3').join(', ')}</b></div>` : ''}
+      ${r.perfeitosSeguidos > 1 ? `<div>Perfeitos seguidos: <b>⭐ ${r.perfeitosSeguidos}</b></div>` : ''}
+    </div>
+    ${sg ? `<div class="sug">Você está há <b>${sg.tentativas}</b> exercícios nesta etapa.${sg.tecla ? ` Revise o dedo da tecla <b>${esc(sg.tecla.toUpperCase())}</b>: <b>${DEDOS[MAPA[sg.tecla]] || '-'}</b>.` : ''} Que tal voltar uma etapa e rever a posição das mãos?<br><button class="mini" id="btn-voltar">Voltar uma etapa</button></div>` : ''}
+    ${r.avancadoLiberado ? `<div class="sug" style="text-align:center">🎓 A aba <b>Avançado</b> foi liberada! Palavras e frases do dia a dia com tudo que você já aprendeu.</div>` : ''}
+    <button id="btn">${r.concluiuTudo ? 'Repetir exercício (Enter)' : 'Próximo exercício (Enter)'}</button>`;
+  $('over').classList.add('show'); $('btn').onclick = proximo; $('btn').focus();
+  if (sg) $('btn-voltar').onclick = async () => { await fetch(API + '/api/perfis/' + perfil.id + '/voltar-etapa', { method: 'POST' }); selecionar(perfil.id); };
+  contar($('n-wpm'), r.wpm); contar($('n-prec'), r.precisao, '%');
+  if (porJev) setTimeout(() => { $('m-conf').style.width = r.confianca * 100 + '%'; $('m-flu').style.width = Math.min(r.fluencia / 2, 1) * 100 + '%'; }, 80);
+  if (perfeito) festa(rapido); else { somFim(); burst(innerWidth / 2, innerHeight / 2, '#6ee7ff', 60); }
+  if (json.conquistasNovas && json.conquistasNovas.length) setTimeout(() => mostrarConquistas(json.conquistasNovas), 700);
+  finalizando = false;
+}
+function proximo() { if (proximoDados) iniciar(proximoDados.proximoNivel, proximoDados.proximoTextoAlvo, proximoDados.tituloNivel, proximoDados.fracas, proximoDados.perfeitosSeguidos); }
+
+/* ---------- perfis ---------- */
+const CORES = ['#6ee7ff', '#b57bff', '#4ade80', '#ffd84a', '#ff9f4a', '#ff5d7a'];
+let perfil = null, corSel = CORES[0];
+const esc = t => t.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = n => (Math.round(n * 10) / 10).toString().replace('.', ',');
+
+$('p-cores').innerHTML = CORES.map((c, i) => `<i data-cor="${c}" class="${i ? '' : 'sel'}" style="background:${c}"></i>`).join('');
+$('p-cores').onclick = e => { const c = e.target.dataset.cor; if (!c) return; corSel = c; document.querySelectorAll('#p-cores i').forEach(i => i.classList.toggle('sel', i.dataset.cor === c)); };
+
+async function listarPerfis() {
+  const lista = await (await fetch(API + '/api/perfis')).json();
+  $('p-lista').innerHTML = lista.length ? lista.map(p => `
+    <div class="pf" data-id="${p.id}"><span class="av" style="background:${p.cor}">${esc(p.nome[0].toUpperCase())}</span>
+    <span class="pn"><b>${esc(p.nome)}</b><small>${p.trilha === 'a' ? 'Avançado ' + p.avNivel : 'Lição ' + p.nivel + ' de ' + p.totalLicoes + ', etapa ' + p.etapa}, ${p.licoes} exercícios</small></span>
+    <button class="mini x" data-del="${p.id}" data-nome="${esc(p.nome)}">Excluir</button></div>`).join('')
+    : '<p class="vazio">Nenhum perfil ainda. Crie o primeiro abaixo.</p>';
+  return lista;
+}
+async function abrirPerfis() { try { await listarPerfis(); $('perfis').classList.add('show'); $('p-nome').focus(); } catch { $('texto').textContent = 'Servidor desligado. Rode "npm run dev" e atualize a página.'; } }
+
+$('p-lista').onclick = async e => {
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    if (!confirm(`Excluir o perfil "${del.dataset.nome}" e todo o progresso? Não dá para desfazer.`)) return;
+    await fetch(API + '/api/perfis/' + del.dataset.del, { method: 'DELETE' });
+    if (perfil && perfil.id === del.dataset.del) { perfil = null; localStorage.removeItem('perfilAtual'); }
+    listarPerfis(); return;
+  }
+  const card = e.target.closest('.pf'); if (card) selecionar(card.dataset.id);
+};
+async function criar() {
+  const nome = $('p-nome').value.trim(); if (!nome) { $('p-nome').focus(); return; }
+  const r = await fetch(API + '/api/perfis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome, cor: corSel }) });
+  if (r.ok) { $('p-nome').value = ''; selecionar((await r.json()).id); }
+}
+$('p-criar').onclick = criar;
+$('p-nome').onkeydown = e => { if (e.key === 'Enter') criar(); };
+
+async function selecionar(id) {
+  perfil = await (await fetch(API + '/api/perfis/' + id)).json();
+  localStorage.setItem('perfilAtual', id);
+  $('b-perfil').textContent = perfil.nome; $('perfis').classList.remove('show'); $('met').classList.remove('show'); $('lic').classList.remove('show'); $('av').classList.remove('show');
+  carregar();
+}
+$('b-perfil').onclick = abrirPerfis;
+
+/* ---------- métricas ---------- */
+const media = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
+function grafico(v, cor, max) {
+  if (v.length < 2) return '<p class="vazio">Faça mais lições para ver a evolução.</p>';
+  const W = 420, H = 120, x = i => 10 + i * (W - 20) / (v.length - 1), y = n => H - 10 - (n / max) * (H - 20);
+  return `<svg viewBox="0 0 ${W} ${H}" role="img"><polyline points="${v.map((n, i) => x(i) + ',' + y(n)).join(' ')}" fill="none" stroke="${cor}" stroke-width="2.5" stroke-linejoin="round"/>${v.map((n, i) => `<circle cx="${x(i)}" cy="${y(n)}" r="3" fill="${cor}"/>`).join('')}</svg>`;
+}
+/* ---------- métricas ampliadas ---------- */
+const diaLocal = (dt = new Date()) => new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+
+function heatmap(atividade) {
+  const hoje = new Date();
+  const total = 91; // 13 semanas
+  const dias = [];
+  for (let i = total - 1; i >= 0; i--) {
+    const dt = new Date(hoje.getTime() - i * 86400000);
+    const chave = diaLocal(dt);
+    dias.push({ chave, n: (atividade && atividade[chave]) || 0, dow: dt.getDay() });
+  }
+  const celulas = [];
+  for (let i = 0; i < dias[0].dow; i++) celulas.push('<i style="visibility:hidden"></i>');
+  dias.forEach(x => {
+    const nivel = x.n === 0 ? 0 : x.n === 1 ? 1 : x.n === 2 ? 2 : x.n <= 4 ? 3 : 4;
+    celulas.push(`<i data-n="${nivel}" title="${x.chave}: ${x.n} treino(s)"></i>`);
+  });
+  return `<div class="heat">${celulas.join('')}</div>`;
+}
+
+function tabelaHesitacao(teclas) {
+  const linhas = Object.entries(teclas || {})
+    .filter(([, v]) => v && v.c && v.m)
+    .map(([k, v]) => ({ tecla: k, ms: Math.round(v.m / v.c), n: v.c }))
+    .filter(x => x.n >= 5)
+    .sort((a, b) => b.ms - a.ms)
+    .slice(0, 6);
+  if (!linhas.length) return '';
+  const max = linhas[0].ms || 1;
+  return `<table class="rank"><tr><th>Tecla</th><th>Tempo médio</th><th>Dedo</th><th></th></tr>${linhas.map(l => `
+    <tr><td><b>${esc(l.tecla.toUpperCase())}</b></td><td>${l.ms} ms</td><td>${DEDOS[MAPA[l.tecla]] || '-'}</td>
+    <td style="width:45%"><div class="meter" style="margin:0"><i style="width:${Math.round((l.ms / max) * 100)}%;background:#ff9f4a"></i></div></td></tr>`).join('')}</table>`;
+}
+
+function resumoSemana(h, atividade) {
+  const agora = Date.now();
+  const janela = i => {
+    const fim = agora - i * 7 * 86400000;
+    const ini = fim - 7 * 86400000;
+    return (h || []).filter(l => {
+      const t = new Date(l.data).getTime();
+      return t >= ini && t <= fim;
+    });
+  };
+  const esta = janela(0), passada = janela(1);
+  const mediaW = a => (a.length ? Math.round(a.reduce((s, l) => s + l.wpm, 0) / a.length) : 0);
+  let dias = 0;
+  for (let i = 0; i < 7; i++) {
+    const k = diaLocal(new Date(agora - i * 86400000));
+    if (atividade && atividade[k]) dias++;
+  }
+  return { licoes: esta.length, dias, wpm: mediaW(esta), anterior: mediaW(passada), dif: mediaW(esta) - mediaW(passada) };
+}
+
+async function abrirMetricas() {
+  if (!perfil) return abrirPerfis();
+  const p = await (await fetch(API + '/api/perfis/' + perfil.id)).json();
+  const P = ((await (await fetch(API + '/api/painel?perfil=' + perfil.id)).json()).painel) || painel;
+  const rk = await (await fetch(API + '/api/ranking')).json().catch(() => null);
+  const minhaPos = rk && rk.perfis ? rk.perfis.find(x => x.id === perfil.id) : null;
+  if (P) aplicarPainel(P);
+
+  const h = p.historico || [];
+  const ult = h.slice(-30);
+  const testes = P ? P.testes || [] : [];
+  const jogos = P ? P.jogo || [] : [];
+  const rec = (P && P.recordes) || {};
+  const of = (P && P.ofensiva) || { atual: 0, recorde: 0 };
+
+  const cards = [
+    ['Lições feitas', h.length],
+    ['WPM médio', fmt(media(h.map(l => l.wpm)))],
+    ['Melhor WPM', Math.max(0, ...h.map(l => l.wpm))],
+    ['Precisão média', Math.round(media(h.map(l => l.precisao))) + '%'],
+    ['Tempo treinado', (P ? P.tempoTotalMin : 0) + ' min'],
+    ['Dias seguidos', '🔥 ' + (of.atual || 0)],
+    ['Índice', (P && P.indice ? P.indice.indice : 0)],
+    ['Lição atual', p.trilha === 'a' ? 'Avançado ' + p.av.nivel + ' (etapa ' + p.av.etapa + ')' : p.nivel + ' (etapa ' + (p.etapa || 1) + ')']
+  ];
+
+  const mapa = LINHAS.map(l => `<div class="row">${l.map(([t]) => {
+    const s = p.teclas ? p.teclas[t] : null;
+    const r = s && s.t ? s.e / s.t : null;
+    const em = p.fracas && p.fracas[t];
+    return `<div class="k ${em ? 'treino-k' : ''}" style="background:${r === null ? '#222a50' : `rgba(255,90,110,${.15 + Math.min(r * 4, .85)})`}" title="${t.toUpperCase()}: ${s ? s.e + ' erros em ' + s.t + ' toques' : 'sem dados'}${em ? ' (em treino)' : ''}">${t}</div>`;
+  }).join('')}</div>`).join('');
+
+  const testes1min = testes.filter(t => t.tipo === '1min');
+  const grafTeste = testes1min.length >= 2
+    ? grafico(testes1min.map(t => t.wpm), '#ffd84a', Math.max(10, ...testes1min.map(t => t.wpm)))
+    : '<p class="vazio">Faça o teste de 1 minuto duas vezes para ver a evolução.</p>';
+  const grafJogo = jogos.length >= 2
+    ? grafico(jogos.map(j => j.pontos), '#b57bff', Math.max(10, ...jogos.map(j => j.pontos)))
+    : '<p class="vazio">Jogue duas partidas para ver a evolução.</p>';
+
+  const linhas = h.slice(-8).reverse().map(l => `<tr><td>${new Date(l.data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td><td>${l.trilha === 'a' ? 'A' : ''}${l.nivel}${l.etapa ? '.' + l.etapa : ''}</td><td>${l.wpm}</td><td>${l.precisao}%</td><td>${l.decididoPor === 'jev' ? 'Jev' : 'Regra fixa'}</td></tr>`).join('');
+  const linhasTestes = testes.slice(-6).reverse().map(t => `<tr><td>${new Date(t.data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td><td>${t.tipo === '1min' ? '1 minuto' : '30 segundos'}</td><td>${t.wpm}</td><td>${t.precisao}%</td><td>${t.pontos}</td></tr>`).join('');
+
+  const conquistas = (P && P.conquistas) || [];
+  const cq = conquistas.map(c => `<div class="cq ${c.em ? '' : 'off'}" title="${esc(c.desc)}"><span class="ic">${c.icone}</span><b>${esc(c.nome)}</b>${c.em ? 'conquistada' : 'bloqueada'}</div>`).join('');
+  const sem = resumoSemana(h, p.atividade);
+
+  $('met-box').innerHTML = `
+    <h2>Métricas de ${esc(p.nome)}</h2>
+    <p>Resumo de todo o treino deste perfil${minhaPos ? ` · <b>${minhaPos.posicao}º lugar</b> no ranking` : ''}.</p>
+    <div class="cards">${cards.map(([t, v]) => `<div><b>${v}</b><small>${t}</small></div>`).join('')}</div>
+    <div class="sec2"><span>Recordes</span><small>por modalidade</small></div>
+    <div class="cards">
+      <div><b>${rec.wpm || 0}</b><small>melhor WPM em lição</small></div>
+      <div><b>${rec.precisao || 0}%</b><small>melhor precisão</small></div>
+      <div><b>${rec.combo || 0}</b><small>melhor combo</small></div>
+      <div><b>${rec.teste1min ? rec.teste1min.wpm : 0}</b><small>teste de 1 min</small></div>
+      <div><b>${rec.corrida30s ? rec.corrida30s.pontos : 0}</b><small>corrida de 30s</small></div>
+      <div><b>${rec.jogo ? rec.jogo.pontos : 0}</b><small>pontos no jogo</small></div>
+    </div>
+    <div class="sec2"><span>Evolução</span><small>últimas ${ult.length} lições</small></div>
+    <div class="graf">
+      <div><small>Palavras por minuto</small>${grafico(ult.map(l => l.wpm), '#6ee7ff', Math.max(10, ...ult.map(l => l.wpm)))}</div>
+      <div><small>Precisão em %</small>${grafico(ult.map(l => l.precisao), '#4ade80', 100)}</div>
+      <div><small>Teste de 1 minuto (${testes1min.length})</small>${grafTeste}</div>
+      <div><small>Jogo das palavras (${jogos.length})</small>${grafJogo}</div>
+    </div>
+    <div class="sec2"><span>Constância</span><small>últimas 13 semanas</small></div>
+    ${heatmap(p.atividade)}
+    <div class="sec2"><span>Semana</span><small>últimos 7 dias</small></div>
+    <div class="cards">
+      <div><b>${sem.dias}/7</b><small>dias treinados</small></div>
+      <div><b>${sem.licoes}</b><small>lições na semana</small></div>
+      <div><b>${sem.wpm}</b><small>WPM da semana</small></div>
+      <div><b>${sem.dif > 0 ? '+' : ''}${sem.dif}</b><small>vs. semana passada (${sem.anterior})</small></div>
+    </div>
+    <div class="sec2"><span>Onde você mais erra</span><small>mais vermelho = mais erro</small></div>
+    <div class="kb">${mapa}</div>
+    <div class="sec2"><span>Onde você hesita</span><small>tempo médio por tecla</small></div>
+    ${tabelaHesitacao(p.teclas) || '<p class="vazio">Ainda sem dados de tempo suficientes.</p>'}
+    <div class="sec2"><span>Conquistas</span><small>${conquistas.filter(c => c.em).length} de ${conquistas.length}</small></div>
+    <div class="conquistas">${cq || '<p class="vazio">Sem conquistas ainda.</p>'}</div>
+    <div class="sec2"><span>Últimas lições</span></div>
+    ${h.length ? `<table><tr><th>Quando</th><th>Lição</th><th>WPM</th><th>Precisão</th><th>Decisão</th></tr>${linhas}</table>` : '<p class="vazio">Nenhuma lição concluída ainda.</p>'}
+    ${testes.length ? `<div class="sec2"><span>Últimos testes</span></div><table class="rank"><tr><th>Quando</th><th>Teste</th><th>WPM</th><th>Precisão</th><th>Acertos</th></tr>${linhasTestes}</table>` : ''}
+    <button class="mini" id="met-fechar" style="margin-top:20px">Fechar</button>`;
+  $('met').classList.add('show');
+  $('met-fechar').onclick = () => $('met').classList.remove('show');
+  $('met-fechar').focus();
+}
+$('b-met').onclick = abrirMetricas;
+
+/* ---------- lições ---------- */
+let licInfo = null;
+const putConfig = body => fetch(API + '/api/config/pontuacao', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+const ROT_STATUS = { concluida: ['Concluída', 'ok'], andamento: ['Em andamento', 'and'], bloqueada: ['Bloqueada', ''] };
+async function abrirLicoes(msg = '', erro = false) {
+  if (!perfil) return abrirPerfis();
+  const j = await (await fetch(API + '/api/licoes?perfil=' + perfil.id)).json(), L = j.licoes, ultima = L[L.length - 1];
+  const todas = j.modo === 'todas'; licInfo = j;
+  const blocoModo = `<div class="modo"><span>Pontuação mínima:</span>
+      <button class="mini ${todas ? 'on' : ''}" data-modo="todas">Todas as lições</button>
+      <button class="mini ${todas ? '' : 'on'}" data-modo="manual">Manual (cada lição)</button></div>
+    ${todas ? `<div class="lic"><span class="pn"><b>Valor para todas as lições</b><small>Vale para todas as lições de letras, inclusive as concluídas, e para as novas. O Avançado tem a sua própria pontuação.</small></span>
+      <label>Precisão mín. (%)<input id="g-prec" type="number" min="50" max="100" value="${j.padrao.precisaoMin}"></label>
+      <label>Palavras/min mín.<input id="g-wpm" type="number" min="0" max="150" value="${j.padrao.wpmMin}"></label>
+      <button class="mini" id="g-aplicar">Aplicar a todas</button></div>` : ''}`;
+  const linhas = L.map(l => {
+    const [rot, cls] = ROT_STATUS[l.status];
+    return `<div class="lic ${l.atual ? 'atual' : ''} ${l.status === 'bloqueada' ? 'bloq' : ''}" data-n="${l.numero}">
+      <span class="pn"><b>${esc(l.titulo)}</b><small>Letras: ${esc([...l.letras].join(' ').toUpperCase())}<br>Etapas: ${l.etapas.map(esc).join(' → ')}${l.atual ? ' (você está na etapa ' + l.etapaAtual + ')' : ''}</small></span>
+      <span class="tag ${cls}">${rot}</span>
+      <label>Precisão mín. (%)<input class="pont" data-campo="prec" type="number" min="50" max="100" value="${l.precisaoMin}" ${todas ? 'disabled' : ''}></label>
+      <label>Palavras/min mín.<input class="pont" data-campo="wpm" type="number" min="0" max="150" value="${l.wpmMin}" ${todas ? 'disabled' : ''}></label>
+      <button class="mini" data-treinar="${l.numero}" ${l.status === 'bloqueada' ? 'disabled' : ''}>${l.atual ? 'Continuar' : 'Treinar'}</button>
+      ${!l.fixa && l.numero === ultima.numero ? `<button class="mini x" data-dellic="${l.numero}">Excluir</button>` : ''}
+    </div>`;
+  }).join('');
+  $('lic-box').innerHTML = `
+    <h2>Lições</h2><p>Para passar de etapa, o aluno precisa bater a precisão e a velocidade definidas em cada lição. O Jev ainda avalia se está pronto, e teclas em treino também seguram a etapa.</p>
+    ${blocoModo}
+    ${linhas}
+    <div class="novo"><input id="l-letras" maxlength="30" placeholder="Letras da nova lição, ex: qwer" aria-label="Letras da nova lição">
+      ${todas ? '' : `<label style="font-size:12px;color:var(--mute)">Precisão (%)<br><input id="l-prec" type="number" min="50" max="100" value="85" style="width:74px;padding:11px 8px;border-radius:12px;border:1px solid var(--line);background:rgba(5,8,22,.6);color:var(--text)"></label>
+      <label style="font-size:12px;color:var(--mute)">Palavras/min<br><input id="l-wpm" type="number" min="0" max="150" value="15" style="width:74px;padding:11px 8px;border-radius:12px;border:1px solid var(--line);background:rgba(5,8,22,.6);color:var(--text)"></label>`}
+      <button id="l-criar">Criar lição ${L.length + 1}</button></div>
+    <div class="msg ${erro ? 'err' : ''}" id="l-msg" role="status">${esc(msg)}</div>
+    <button class="mini" id="l-fechar" style="margin-top:12px">Fechar</button>`;
+  $('lic').classList.add('show');
+}
+$('b-lic').onclick = () => abrirLicoes().catch(() => { $('texto').textContent = 'Servidor desligado. Rode "npm run dev" e atualize a página.'; });
+$('lic-box').onclick = async e => {
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.id === 'l-fechar') { $('lic').classList.remove('show'); return; }
+  if (t.dataset.modo) {
+    if (t.dataset.modo === 'todas') {
+      const pd = licInfo.padrao;
+      if (!confirm(`Aplicar ${pd.precisaoMin}% de precisão e ${pd.wpmMin} palavras por minuto a TODAS as lições? As pontuações atuais de cada lição serão substituídas.`)) return;
+      const r = await putConfig({ modo: 'todas' }); abrirLicoes(r.ok ? 'Modo "Todas as lições" ligado.' : (await r.json()).erro, !r.ok);
+    } else { const r = await putConfig({ modo: 'manual' }); abrirLicoes(r.ok ? 'Modo manual: cada lição tem a sua pontuação (ficaram com os valores aplicados).' : (await r.json()).erro, !r.ok); }
+    carregar(); return;
+  }
+  if (t.id === 'g-aplicar') {
+    const prec = Number($('g-prec').value), wpm = Number($('g-wpm').value);
+    if (!confirm(`Aplicar ${prec}% de precisão e ${wpm} palavras por minuto a TODAS as lições?`)) return;
+    const r = await putConfig({ modo: 'todas', padrao: { precisaoMin: prec, wpmMin: wpm } });
+    abrirLicoes(r.ok ? 'Pontuação aplicada a todas as lições.' : (await r.json()).erro, !r.ok); carregar(); return;
+  }
+  if (t.dataset.treinar) {
+    const r = await fetch(API + '/api/perfis/' + perfil.id + '/treinar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ licao: Number(t.dataset.treinar) }) });
+    if (r.ok) selecionar(perfil.id); else abrirLicoes((await r.json()).erro, true);
+    return;
+  }
+  if (t.dataset.dellic) {
+    if (!confirm('Excluir a lição ' + t.dataset.dellic + '? Os perfis que estavam nela voltam para a anterior.')) return;
+    const r = await fetch(API + '/api/licoes/' + t.dataset.dellic, { method: 'DELETE' });
+    await abrirLicoes(r.ok ? 'Lição excluída.' : (await r.json()).erro, !r.ok); if (r.ok) carregar(); return;
+  }
+  if (t.id === 'l-criar') {
+    const letras = $('l-letras').value.trim(); if (!letras) { $('l-letras').focus(); return; }
+    const r = await fetch(API + '/api/licoes', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify($('l-prec') ? { letras, precisaoMin: Number($('l-prec').value), wpmMin: Number($('l-wpm').value) } : { letras }) });
+    const j = await r.json();
+    abrirLicoes(r.ok ? `Lição ${j.numero} criada com ${j.etapas.length} etapa(s): ${j.etapas.join(' → ')}.` : j.erro, !r.ok);
+  }
+};
+$('lic-box').onchange = async e => {
+  if (!e.target.classList.contains('pont')) return;
+  const row = e.target.closest('.lic'), prec = Number(row.querySelector('[data-campo=prec]').value), wpm = Number(row.querySelector('[data-campo=wpm]').value);
+  const r = await fetch(API + '/api/licoes/' + row.dataset.n + '/pontuacao', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ precisaoMin: prec, wpmMin: wpm }) });
+  const m = $('l-msg'); m.className = 'msg' + (r.ok ? '' : ' err'); m.textContent = r.ok ? 'Pontuação salva.' : (await r.json()).erro;
+};
+
+/* ---------- avançado ---------- */
+async function abrirAvancado(msg = '', erro = false) {
+  if (!perfil) return abrirPerfis();
+  const j = await (await fetch(API + '/api/avancado?perfil=' + perfil.id)).json();
+  if (!j.liberado) {
+    $('av-box').innerHTML = `<h2>Avançado</h2><p>Esta aba abre quando você concluir a <b>lição ${j.liberaApos}</b>. Aqui o sistema cria lições só com <b>palavras e frases do dia a dia</b>, usando tudo que você já aprendeu.</p><button class="mini" id="a-fechar">Fechar</button>`;
+    $('av').classList.add('show'); return;
+  }
+  const linhas = j.licoes.map(l => {
+    const [rot, cls] = ROT_STATUS[l.status];
+    return `<div class="lic ${l.atual ? 'atual' : ''} ${l.status === 'bloqueada' ? 'bloq' : ''}" data-n="${l.numero}">
+      <span class="pn"><b>${esc(l.titulo)}</b><small>${esc(l.escopo)}${l.auto ? ' · criada automaticamente' : ''}<br>Etapas: ${l.etapas.map(esc).join(' → ')}${l.atual ? ' (você está na etapa ' + l.etapaAtual + ')' : ''}</small></span>
+      <span class="tag ${cls}">${rot}</span>
+      <label>Precisão mín. (%)<input class="pont-av" data-campo="prec" type="number" min="50" max="100" value="${l.precisaoMin}"></label>
+      <label>Palavras/min mín.<input class="pont-av" data-campo="wpm" type="number" min="0" max="150" value="${l.wpmMin}"></label>
+      <button class="mini" data-treinar-av="${l.numero}" ${l.status === 'bloqueada' ? 'disabled' : ''}>${l.atual ? 'Continuar' : 'Treinar'}</button>
+    </div>`;
+  }).join('');
+  $('av-box').innerHTML = `
+    <h2>Avançado</h2><p>Palavras e frases do dia a dia com as letras que você já aprendeu: Avançado 1 usa as lições 1 a 5, o 2 usa 1 a 10 e o 3 em diante usa tudo, até a última lição criada.</p>
+    <div class="modo"><span>Novas lições:</span>
+      <button class="mini ${j.automatico ? 'on' : ''}" data-auto="1">Adicionar automaticamente</button>
+      <button class="mini ${j.automatico ? '' : 'on'}" data-auto="0">Só quando eu pedir</button></div>
+    <p style="font-size:13px">${j.automatico ? 'Ao terminar a última lição, o sistema cria a próxima, sempre mais difícil (frases maiores e meta um pouco maior).' : 'Ao terminar a última lição, use o botão abaixo para adicionar a próxima.'}</p>
+    ${linhas}
+    <button class="mini" id="a-add">Adicionar lição ${j.licoes.length + 1}</button>
+    <div class="msg ${erro ? 'err' : ''}" id="a-msg" role="status">${esc(msg)}</div>
+    <button class="mini" id="a-fechar" style="margin-top:12px">Fechar</button>`;
+  $('av').classList.add('show');
+}
+$('b-av').onclick = () => abrirAvancado().catch(() => { $('texto').textContent = 'Servidor desligado. Rode "npm run dev" e atualize a página.'; });
+$('av-box').onclick = async e => {
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.id === 'a-fechar') { $('av').classList.remove('show'); return; }
+  if (t.dataset.auto !== undefined) {
+    const r = await fetch(API + '/api/avancado/automatico', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ automatico: t.dataset.auto === '1' }) });
+    abrirAvancado(r.ok ? (t.dataset.auto === '1' ? 'Automático ligado.' : 'Automático desligado.') : (await r.json()).erro, !r.ok); return;
+  }
+  if (t.id === 'a-add') {
+    const r = await fetch(API + '/api/avancado/licoes', { method: 'POST' }); const j = await r.json();
+    abrirAvancado(r.ok ? `Avançado ${j.numero} adicionado.` : j.erro, !r.ok); return;
+  }
+  if (t.dataset.treinarAv) {
+    const r = await fetch(API + '/api/perfis/' + perfil.id + '/treinar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ licao: Number(t.dataset.treinarAv), trilha: 'a' }) });
+    if (r.ok) selecionar(perfil.id); else abrirAvancado((await r.json()).erro, true);
+  }
+};
+$('av-box').onchange = async e => {
+  if (!e.target.classList.contains('pont-av')) return;
+  const row = e.target.closest('.lic'), prec = Number(row.querySelector('[data-campo=prec]').value), wpm = Number(row.querySelector('[data-campo=wpm]').value);
+  const r = await fetch(API + '/api/avancado/licoes/' + row.dataset.n + '/pontuacao', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ precisaoMin: prec, wpmMin: wpm }) });
+  const m = $('a-msg'); m.className = 'msg' + (r.ok ? '' : ' err'); m.textContent = r.ok ? 'Pontuação salva.' : (await r.json()).erro;
+};
+
+/* =======================================================================
+   PAINEL DO DIA, REVISÃO, TESTES, JOGO, RANKING, AJUSTES E BACKUP
+   Tudo em JavaScript puro, em cima do mesmo HTML — sem build e sem libs.
+   ======================================================================= */
+
+/* ---------- utilidades ---------- */
+const novoId = () =>
+  (window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+
+function aviso(texto, tipo) {
+  const box = $('toasts');
+  if (!box) return;
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = tipo ? `<b>${esc(tipo)}</b><br>${texto}` : texto;
+  box.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .4s'; }, 3600);
+  setTimeout(() => el.remove(), 4100);
+}
+
+function mostrarConquistas(novas) {
+  if (!novas || !novas.length) return;
+  const conquistas = (painel && painel.conquistas) || [];
+  novas.forEach(c => {
+    const info = conquistas.find(x => x.id === c.id);
+    aviso(`${info ? esc(info.desc) : ''}`, `${info ? info.icone : '🏅'} ${info ? esc(info.nome) : 'Nova conquista'}`);
+  });
+  beep(880, .12, 'triangle', .05);
+  beep(1174, .14, 'triangle', .05, .12);
+}
+
+function mostrarFalhaRede() {
+  $('res').className = 'res';
+  $('over').classList.toggle('perfeito', false);
+  $('res').innerHTML = `
+    <h3>Servidor fora do ar</h3>
+    <div class="jev"><div>O seu resultado ficou <b>guardado neste navegador</b> e vai ser enviado sozinho quando o servidor voltar. Nada foi perdido.</div></div>
+    <button id="btn">Tentar de novo (Enter)</button>`;
+  $('over').classList.add('show');
+  $('btn').onclick = reenviarFilaAgora;
+  $('btn').focus();
+}
+
+function acaoEnter() {
+  const b = $('btn');
+  if (b) { b.click(); return; }
+  const outro = document.querySelector('#res button');
+  if (outro) outro.click();
+}
+
+function fecharModais() {
+  if (typeof J !== 'undefined' && J.ativo) jogoEncerrar(false);
+  ['perfis', 'met', 'lic', 'av', 'testes', 'rank', 'ajustes', 'revisao', 'jogo'].forEach(id => {
+    const el = $(id);
+    if (el) el.classList.remove('show');
+  });
+  const o = $('over');
+  o.classList.remove('show', 'perfeito');
+}
+
+/* ---------- relógio dos modos cronometrados ---------- */
+function pararRelogio() {
+  if (relogio) { clearInterval(relogio); relogio = null; }
+  const el = $('relogio');
+  if (el) { el.hidden = true; el.classList.remove('urgente'); }
+}
+
+function iniciarRelogio(segundos, rotulo) {
+  pararRelogio();
+  const el = $('relogio'), txt = $('relogio-txt'), tipo = $('relogio-tipo');
+  if (!el) return;
+  el.hidden = false;
+  el.classList.remove('urgente');
+  if (tipo) tipo.textContent = rotulo || 'tempo';
+  const fim = Date.now() + segundos * 1000;
+  const mostra = () => {
+    const resta = Math.max(0, Math.ceil((fim - Date.now()) / 1000));
+    txt.textContent = resta + 's';
+    if (resta <= 5) el.classList.add('urgente');
+    if (resta <= 0) { pararRelogio(); finalizar(); }
+  };
+  mostra();
+  relogio = setInterval(mostra, 200);
+}
+
+/* ---------- painel do dia ---------- */
+function aplicarPainel(p) {
+  if (!p) return;
+  painel = p;
+  const of = p.ofensiva || { atual: 0, recorde: 0 };
+  const st = $('streak');
+  st.hidden = !(of.atual > 0);
+  st.textContent = '🔥 ' + (of.atual || 0);
+  st.title = `${of.atual || 0} dia(s) seguidos treinando · recorde: ${of.recorde || 0} dia(s)`;
+
+  const pf = $('perfeitos');
+  pf.hidden = !(p.perfeitosSeguidos > 0);
+  pf.textContent = '⭐ ' + (p.perfeitosSeguidos || 0);
+
+  const dia = $('dia');
+  dia.hidden = false;
+  const m = p.metaDia || { tipo: 'sessoes', feito: 0, alvo: 1, pct: 0 };
+  const unidade = m.tipo === 'minutos' ? 'min' : m.alvo === 1 ? 'exercício' : 'exercícios';
+  const partes = [];
+  partes.push(of.atual ? `🔥 ${of.atual} ${of.atual === 1 ? 'dia seguido' : 'dias seguidos'}` : '🔥 comece a sequência hoje');
+  if (of.recorde > of.atual) partes.push(`recorde ${of.recorde}`);
+  if (p.indice && p.indice.indice) partes.push(`índice ${p.indice.indice}`);
+  if (m.cumprida) partes.push('meta cumprida ✅');
+  $('dia-ofensiva').textContent = partes.join(' · ');
+  $('dia-meta').textContent = `Meta de hoje: ${m.feito}/${m.alvo} ${unidade}`;
+  $('dia-barra').style.width = (m.pct || 0) + '%';
+  dia.classList.toggle('ok', !!m.cumprida);
+}
+
+function talvezRevisao() {
+  if (!painel || !painel.revisao || !painel.revisao.precisaRevisao) return;
+  const chave = 'revisaoVista:' + perfil.id + ':' + diaLocal();
+  if (localStorage.getItem(chave)) return;
+  localStorage.setItem(chave, '1');
+  mostrarRevisao();
+}
+
+function mostrarRevisao() {
+  const r = (painel && painel.revisao) || { diasSemTreinar: 3, limite: 3 };
+  $('revisao-box').innerHTML = `
+    <h2>Que bom te ver de novo</h2>
+    <p>Você ficou <b>${r.diasSemTreinar} dia(s)</b> sem treinar — o seu limite de revisão é ${r.limite} dia(s). Uma revisão curta já reaquece os dedos.</p>
+    <div class="sug" style="border-style:solid">Revisão, aquecimento e testes <b>não mexem</b> na sua lição, na etapa nem nas metas. Só somam no seu treino.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+      <button id="rev-fazer">Revisão de 30s</button>
+      <button class="mini" id="rev-aquecer">Aquecimento de 30s</button>
+      <button class="mini" id="rev-pular">Continuar de onde parei</button>
+    </div>`;
+  $('revisao').classList.add('show');
+  $('rev-fazer').onclick = () => { $('revisao').classList.remove('show'); iniciarCronometrado('revisao'); };
+  $('rev-aquecer').onclick = () => { $('revisao').classList.remove('show'); iniciarCronometrado('aquecimento'); };
+  $('rev-pular').onclick = () => { $('revisao').classList.remove('show'); };
+}
+
+/* ---------- sessões (lição, teste, prática) ---------- */
+function abrirSessao(cfg) {
+  fecharModais();
+  sessao = { tipo: cfg.tipo, origem: cfg.origem, exercicioId: cfg.exercicioId || null };
+  finalizando = false;
+  d = { nivel: 0, texto: cfg.texto, pos: 0, eventos: [], inicio: 0, inicioChar: 0, bloqueado: false, comboMax: 0 };
+  combo = 0; nErros = 0;
+  $('combo').textContent = 0;
+  $('prec').textContent = '100%';
+  $('nivel').textContent = cfg.titulo;
+  $('treino').hidden = true;
+  $('treino').innerHTML = '';
+  render();
+  if (cfg.segundos > 0) iniciarRelogio(cfg.segundos, 'tempo');
+  else pararRelogio();
+}
+
+function finalizar() {
+  if (finalizando) return;
+  if (!d.eventos.length) {
+    pararRelogio();
+    aviso('Nenhuma tecla foi digitada neste treino.', 'Nada para enviar');
+    carregar();
+    return;
+  }
+  finalizando = true;
+  const segundos = Math.max(1, Math.round((Date.now() - (d.inicio || Date.now())) / 1000));
+  if (sessao.tipo === 'licao') return enviar();
+  if (sessao.tipo === 'teste') return enviarTeste(segundos);
+  return enviarPratica(segundos);
+}
+
+async function iniciarCronometrado(origem, exercicioId) {
+  if (!perfil) return abrirPerfis();
+  try {
+    if (origem === 'numeros') {
+      const e = await (await fetch(API + '/api/numeros/' + encodeURIComponent(exercicioId))).json();
+      abrirSessao({ tipo: 'numeros', origem: 'numeros', exercicioId, texto: e.texto, titulo: e.titulo, segundos: 0 });
+      return;
+    }
+    if (origem === '1min' || origem === '30s') {
+      const j = await (await fetch(API + '/api/testes/texto?perfil=' + perfil.id + '&tipo=' + origem)).json();
+      abrirSessao({ tipo: 'teste', origem: j.tipo, texto: j.texto, titulo: j.titulo, segundos: j.segundos });
+      aviso(origem === '1min' ? 'O relógio começa na primeira tecla.' : 'Corra contra o seu melhor: mesma duração, mesma régua.', origem === '1min' ? 'Teste de 1 minuto' : 'Corrida de 30s');
+      return;
+    }
+    const q = origem === 'aquecimento' || origem === 'fracas' ? origem : 'revisao';
+    const j = await (await fetch(API + '/api/pratica/texto?perfil=' + perfil.id + '&origem=' + q)).json();
+    abrirSessao({ tipo: 'pratica', origem: q, texto: j.texto, titulo: j.titulo, segundos: j.segundos });
+  } catch {
+    aviso('Servidor desligado. Rode "npm run dev" e atualize a página.', 'Sem conexão');
+  }
+}
+
+async function enviarTeste(segundos) {
+  const corpo = {
+    perfilId: perfil.id, tipo: sessao.origem, segundos,
+    comboMax: d.comboMax || 0, id: novoId(), eventosTeclas: d.eventos
+  };
+  let j;
+  try {
+    const res = await fetch(API + '/api/testes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    j = await res.json();
+  } catch {
+    finalizando = false;
+    guardarFila('/api/testes', corpo);
+    mostrarFalhaRede();
+    return;
+  }
+  if (j.painel) aplicarPainel(j.painel);
+  if (j.conquistasNovas && j.conquistasNovas.length) setTimeout(() => mostrarConquistas(j.conquistasNovas), 700);
+  mostrarResultadoTeste(j, segundos);
+  finalizando = false;
+}
+
+function mostrarResultadoTeste(j, segundos) {
+  const eh1min = j.tipo === '1min';
+  const anterior = j.recordeAnterior || 0;
+  const marca = eh1min ? j.wpm : j.pontos;
+  const unidade = eh1min ? 'palavras/min' : 'acertos';
+  $('res').className = 'res' + (j.novoRecorde ? ' perfeito rapido' : '');
+  $('over').classList.toggle('perfeito', !!j.novoRecorde);
+  $('res').innerHTML = `
+    ${j.novoRecorde ? '<div class="selo">NOVO RECORDE!</div>' : ''}
+    <h3>${eh1min ? 'Teste de 1 minuto' : 'Corrida de 30 segundos'} concluído</h3>
+    <div class="big">
+      <div><b id="n-wpm">0</b><small>palavras por minuto</small></div>
+      <div><b id="n-prec">0</b><small>precisão</small></div>
+    </div>
+    <div class="jev">
+      <div>Acertos: <b>${j.pontos}</b> em ${segundos} segundos</div>
+      <div>Recorde anterior: <b>${anterior}</b> ${unidade} · agora: <b>${marca}</b> ${unidade}</div>
+      <div>${j.novoRecorde ? 'Você acabou de passar o seu próprio recorde.' : `Faltaram <b>${Math.max(0, anterior - marca)}</b> ${unidade} para igualar o seu melhor — o alvo é você mesmo.`}</div>
+    </div>
+    <button id="btn">Repetir (Enter)</button>
+    <button class="mini" id="btn-sair-t" style="margin-left:8px">Voltar à lição</button>`;
+  $('over').classList.add('show');
+  contar($('n-wpm'), j.wpm);
+  contar($('n-prec'), j.precisao, '%');
+  $('btn').onclick = () => { $('over').classList.remove('show'); iniciarCronometrado(j.tipo); };
+  $('btn-sair-t').onclick = () => { $('over').classList.remove('show'); carregar(); };
+  $('btn').focus();
+  if (j.novoRecorde) { festa(true); } else { somFim(); burst(innerWidth / 2, innerHeight / 2, '#ffd84a', 40); }
+}
+
+async function enviarPratica(segundos) {
+  const corpo = {
+    perfilId: perfil.id, origem: sessao.origem, exercicioId: sessao.exercicioId || undefined,
+    segundos, comboMax: d.comboMax || 0, id: novoId(), eventosTeclas: d.eventos
+  };
+  let j;
+  try {
+    const res = await fetch(API + '/api/treino-livre', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    j = await res.json();
+  } catch {
+    finalizando = false;
+    guardarFila('/api/treino-livre', corpo);
+    mostrarFalhaRede();
+    return;
+  }
+  if (j.painel) aplicarPainel(j.painel);
+  if (j.conquistasNovas && j.conquistasNovas.length) setTimeout(() => mostrarConquistas(j.conquistasNovas), 700);
+  mostrarResultadoPratica(j, segundos);
+  finalizando = false;
+}
+
+function mostrarResultadoPratica(j, segundos) {
+  const erros = (j.errosPorTecla || []).filter(e => e.erros > 0);
+  $('res').className = 'res';
+  $('over').classList.toggle('perfeito', false);
+  $('res').innerHTML = `
+    <h3>${esc(j.mensagem || 'Treino concluído')}</h3>
+    <div class="big">
+      <div><b id="n-wpm">0</b><small>palavras por minuto</small></div>
+      <div><b id="n-prec">0</b><small>precisão</small></div>
+    </div>
+    <div class="jev">
+      <div>${j.pontos} acertos em ${segundos} segundos</div>
+      ${erros.length ? `<div>Erros por tecla: <b>${erros.map(e => esc(e.tecla.toUpperCase()) + ' (' + e.erros + ')').join(', ')}</b></div>` : '<div>Sem erros neste treino. Excelente.</div>'}
+      <div>Este treino não mudou a sua lição nem a sua etapa.</div>
+    </div>
+    <button id="btn">Treinar de novo (Enter)</button>
+    <button class="mini" id="btn-sair-p" style="margin-left:8px">Voltar à lição</button>`;
+  $('over').classList.add('show');
+  contar($('n-wpm'), j.wpm);
+  contar($('n-prec'), j.precisao, '%');
+  $('btn').onclick = () => {
+    $('over').classList.remove('show');
+    if (sessao.tipo === 'numeros') iniciarCronometrado('numeros', sessao.exercicioId);
+    else if (sessao.origem === 'livre') abrirSessao({ tipo: 'pratica', origem: 'livre', texto: d.texto, titulo: 'Seu texto', segundos: 0 });
+    else iniciarCronometrado(sessao.origem);
+  };
+  $('btn-sair-p').onclick = () => { $('over').classList.remove('show'); carregar(); };
+  $('btn').focus();
+  somFim();
+}
+
+/* ---------- fila local (servidor fora do ar) ---------- */
+const CHAVE_FILA = 'filaEnvios';
+
+function guardarFila(url, corpo) {
+  try {
+    const fila = JSON.parse(localStorage.getItem(CHAVE_FILA) || '[]');
+    fila.push({ url, corpo, em: Date.now() });
+    localStorage.setItem(CHAVE_FILA, JSON.stringify(fila.slice(-30)));
+  } catch { /* sem localStorage: segue sem fila */ }
+}
+
+async function reprocessarFila() {
+  let fila = [];
+  try { fila = JSON.parse(localStorage.getItem(CHAVE_FILA) || '[]'); } catch { return; }
+  if (!fila.length) return;
+  const restantes = [];
+  let enviados = 0;
+  for (const item of fila) {
+    try {
+      const r = await fetch(API + item.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item.corpo) });
+      if (r.ok) enviados++; else restantes.push(item);
+    } catch { restantes.push(item); }
+  }
+  try { localStorage.setItem(CHAVE_FILA, JSON.stringify(restantes)); } catch { /* ignora */ }
+  if (enviados > 0) {
+    aviso(`${enviados} treino(s) que estavam guardados foram enviados.`, 'Fila sincronizada');
+    await recarregarPainel();
+  }
+}
+
+async function reenviarFilaAgora() {
+  $('over').classList.remove('show');
+  await reprocessarFila();
+  carregar();
+}
+
+async function recarregarPainel() {
+  if (!perfil) return;
+  try {
+    const j = await (await fetch(API + '/api/painel?perfil=' + perfil.id)).json();
+    if (j.painel) aplicarPainel(j.painel);
+  } catch { /* sem servidor */ }
+}
+
+/* ---------- testes e prática (tela) ---------- */
+async function abrirTestes(msg, erro) {
+  if (!perfil) return abrirPerfis();
+  fecharModais();
+  let numeros = [];
+  try {
+    numeros = (await (await fetch(API + '/api/numeros?perfil=' + perfil.id)).json()).exercicios || [];
+  } catch { /* segue sem números */ }
+  const rec = (painel && painel.recordes) || {};
+  const cartao = (icone, titulo, desc, recTxt, acao) => `
+    <div class="t-card">
+      <span class="ic">${icone}</span>
+      <span class="pn"><b>${titulo}</b><small>${desc}</small></span>
+      <span class="rec">${recTxt}</span>
+      <button class="mini" data-fazer="${acao}">Começar</button>
+    </div>`;
+
+  $('testes-box').innerHTML = `
+    <h2>Testes e prática livre</h2>
+    <p>Nada aqui mexe na sua lição, na etapa ou nas metas — só somam no treino e nos recordes.</p>
+    ${cartao('⏱️', 'Teste de 1 minuto', 'Quantas palavras você digita em 60 segundos.', rec.teste1min ? `<b>${rec.teste1min.wpm}</b> palavras/min` : 'sem recorde', '1min')}
+    ${cartao('🏁', 'Corrida de 30 segundos', 'Você contra o seu melhor: mesma duração e mesma régua.', rec.corrida30s ? `<b>${rec.corrida30s.pontos}</b> acertos` : 'sem recorde', '30s')}
+    ${cartao('🔥', 'Aquecimento de 30 segundos', 'Só as teclas da lição atual, para soltar os dedos antes de começar.', 'sem recorde', 'aquecimento')}
+    ${cartao('🎯', 'Revisão das teclas fracas', 'As teclas que você mais erra, em sequências curtas.', 'sem recorde', 'revisao')}
+    <div class="t-card">
+      <span class="ic">📋</span>
+      <span class="pn"><b>Colar seu texto</b><small>Treine com um texto que você escolhe: e-mail, redação, código, receita.</small></span>
+      <span class="rec">até 1200 caracteres</span>
+      <button class="mini" data-texto="1">Usar texto</button>
+    </div>
+    <div class="sec2"><span>Números e símbolos</span><small>prática avulsa</small></div>
+    ${numeros.map(n => `
+      <div class="t-card">
+        <span class="ic">⌨️</span>
+        <span class="pn"><b>${esc(n.titulo)}</b><small>${esc(n.dica)} · ${n.caracteres} caracteres</small></span>
+        <span class="rec">${n.melhor ? `<b>${n.melhor.wpm}</b> palavras/min · ${n.melhor.precisao}%` : 'nunca feito'}</span>
+        <button class="mini" data-num="${n.id}">Treinar</button>
+      </div>`).join('')}
+    <div class="msg ${erro ? 'err' : ''}" id="t-msg" role="status">${esc(msg || '')}</div>
+    <button class="mini" id="t-fechar" style="margin-top:14px">Fechar</button>`;
+  $('testes').classList.add('show');
+  $('testes-box').onclick = e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.id === 't-fechar') { $('testes').classList.remove('show'); return; }
+    if (b.dataset.fazer) {
+      const o = b.dataset.fazer;
+      $('testes').classList.remove('show');
+      iniciarCronometrado(o);
+      return;
+    }
+    if (b.dataset.num) {
+      $('testes').classList.remove('show');
+      iniciarCronometrado('numeros', b.dataset.num);
+      return;
+    }
+    if (b.dataset.texto) formularioTexto();
+  };
+}
+
+/* texto livre: o aluno cola o próprio texto */
+function formularioTexto(msg, erro) {
+  $('testes-box').innerHTML = `
+    <h2>Colar seu texto</h2>
+    <p>Cole o texto que você quer treinar. Ele não muda a sua lição, a sua etapa nem as metas — só entra no seu tempo treinado.</p>
+    <textarea id="tx-livre" rows="8" maxlength="1200" placeholder="Cole aqui o texto..." style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:rgba(5,8,22,.6);color:var(--text);font-family:inherit;font-size:15px;line-height:1.5"></textarea>
+    <div class="msg ${erro ? 'err' : ''}" id="tx-msg" role="status">${esc(msg || '')}</div>
+    <button id="tx-comecar">Começar (Ctrl+Enter)</button>
+    <button class="mini" id="tx-voltar" style="margin-left:8px">Voltar</button>`;
+  $('testes').classList.add('show');
+  $('tx-comecar').onclick = iniciarTexto;
+  $('tx-voltar').onclick = () => abrirTestes();
+  $('tx-livre').focus();
+  $('tx-livre').onkeydown = e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) iniciarTexto(); };
+}
+
+function iniciarTexto() {
+  const campo = $('tx-livre');
+  if (!campo) return;
+  const texto = (campo.value || '').replace(/\s+/g, ' ').trim();
+  if (texto.length < 20) return formularioTexto('Cole pelo menos 20 caracteres para treinar.', true);
+  if (texto.length > 1200) return formularioTexto('Texto muito longo: use até 1200 caracteres.', true);
+  abrirSessao({ tipo: 'pratica', origem: 'livre', texto, titulo: 'Seu texto', segundos: 0 });
+}
+
+/* ---------- ranking ---------- */
+async function abrirRanking() {
+  if (!perfil) return abrirPerfis();
+  fecharModais();
+  let r;
+  try {
+    r = await (await fetch(API + '/api/ranking')).json();
+  } catch {
+    aviso('Servidor desligado. Rode "npm run dev" e atualize a página.', 'Sem conexão');
+    return;
+  }
+  const linhas = (r.perfis || []).map(p => `
+    <tr class="${p.id === perfil.id ? 'eu' : ''}">
+      <td class="pos">${p.posicao}º</td>
+      <td><span class="av" style="background:${p.cor}">${esc((p.nome[0] || '?').toUpperCase())}</span> ${esc(p.nome)}${p.calibrando ? ' <span class="tag">calibrando</span>' : ''}</td>
+      <td><b>${p.indice}</b></td>
+      <td>${p.wpm}</td>
+      <td>${p.precisao}%</td>
+      <td>${p.melhorWpm}</td>
+      <td>🔥 ${p.ofensiva}</td>
+      <td>${p.licoes}</td>
+      <td>${p.melhorJogo}</td>
+    </tr>`).join('');
+
+  $('rank-box').innerHTML = `
+    <h2>Ranking dos perfis</h2>
+    <p>${esc(r.formula)}. Quem tem menos de <b>${r.minimo}</b> lições aparece como <b>calibrando</b> e fica no fim, para não comparar quem começou ontem com quem treina há meses.</p>
+    ${(r.perfis || []).length ? `<table class="rank">
+      <tr><th>#</th><th>Perfil</th><th>Índice</th><th>WPM</th><th>Precisão</th><th>Recorde WPM</th><th>Ofensiva</th><th>Lições</th><th>Jogo</th></tr>
+      ${linhas}
+    </table>` : '<p class="vazio">Crie mais de um perfil para comparar.</p>'}
+    <div class="sug" style="margin-top:14px">Índice = velocidade × precisão². Quem faz 40 palavras/min com 95% fica na frente de quem faz 45 com 80%: errar custa caro no uso real.</div>
+    <button class="mini" id="rk-fechar" style="margin-top:16px">Fechar</button>`;
+  $('rank').classList.add('show');
+  $('rk-fechar').onclick = () => $('rank').classList.remove('show');
+  $('rk-fechar').focus();
+}
+
+/* ---------- ajustes, exportar, importar e backups ---------- */
+function baixarJson(nome, dados) {
+  const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nome;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 600);
+}
+
+async function salvarPrefs(parcial) {
+  try {
+    const r = await fetch(API + '/api/perfis/' + perfil.id + '/prefs', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(parcial)
+    });
+    const j = await r.json();
+    if (!r.ok) return { ok: false, erro: j.erro || 'Falha ao salvar.' };
+    if (j.painel) aplicarPainel(j.painel);
+    return { ok: true };
+  } catch {
+    return { ok: false, erro: 'Servidor desligado. Rode "npm run dev".' };
+  }
+}
+
+function msgAjustes(texto, erro) {
+  const m = $('aj-msg');
+  if (!m) { aviso(texto, erro ? 'Erro' : ''); return; }
+  m.className = 'msg' + (erro ? ' err' : '');
+  m.textContent = texto;
+}
+
+function abrirAjustes(msg, erro) {
+  if (!perfil) return abrirPerfis();
+  fecharModais();
+  const prefs = (painel && painel.prefs) || { diasRevisao: 3, metaDia: { tipo: 'sessoes', valor: 5 }, jogoTamanho: 'normal', reduzirMovimento: false };
+  $('ajustes-box').innerHTML = `
+    <h2>Ajustes de ${esc(perfil.nome)}</h2>
+    <p>Preferências deste perfil, backup e importação. Nada aqui apaga o progresso.</p>
+
+    <div class="sec2"><span>Revisão de inatividade</span><small>padrão: 3 dias</small></div>
+    <div class="aj">
+      <span class="pn"><b>Avisar depois de quantos dias sem treinar</b><small>Quando você volta depois desse tempo, aparece uma revisão curta de 30 segundos.</small></span>
+      <label>Dias<input id="aj-dias" type="number" min="1" max="60" value="${prefs.diasRevisao}"></label>
+      <button class="mini" id="aj-salvar">Salvar</button>
+    </div>
+
+    <div class="sec2"><span>Meta do dia</span></div>
+    <div class="aj">
+      <span class="pn"><b>O que conta na barrinha do topo</b><small>Exercícios concluídos ou minutos treinados.</small></span>
+      <label>Tipo<select id="aj-meta-tipo">
+        <option value="sessoes"${prefs.metaDia.tipo === 'sessoes' ? ' selected' : ''}>Exercícios</option>
+        <option value="minutos"${prefs.metaDia.tipo === 'minutos' ? ' selected' : ''}>Minutos</option>
+      </select></label>
+      <label>Quantidade<input id="aj-meta-valor" type="number" min="1" max="600" value="${prefs.metaDia.valor}"></label>
+      <button class="mini" id="aj-meta-salvar">Salvar meta</button>
+    </div>
+
+    <div class="sec2"><span>Jogo e acessibilidade</span></div>
+    <div class="aj">
+      <span class="pn"><b>Tamanho das palavras no jogo</b><small>Maior ajuda a ler de longe.</small></span>
+      <label>Palavras<select id="aj-jogo-tam">
+        <option value="normal"${prefs.jogoTamanho === 'normal' ? ' selected' : ''}>Normal</option>
+        <option value="grande"${prefs.jogoTamanho === 'grande' ? ' selected' : ''}>Grande</option>
+      </select></label>
+      <label style="flex-direction:row;align-items:center;gap:6px">Reduzir animações<input id="aj-reduzir" type="checkbox"${prefs.reduzirMovimento ? ' checked' : ''}></label>
+      <button class="mini" id="aj-extra-salvar">Salvar</button>
+    </div>
+
+    <div class="sec2"><span>Backup deste perfil</span></div>
+    <div class="aj">
+      <span class="pn"><b>Exportar</b><small>Baixa um arquivo JSON com todo o progresso, recordes e conquistas.</small></span>
+      <button class="mini" id="aj-exportar">Exportar perfil</button>
+    </div>
+    <div class="aj">
+      <span class="pn"><b>Importar</b><small>Cria um perfil novo a partir do arquivo — nada é sobrescrito.</small></span>
+      <input id="aj-arquivo" type="file" accept=".json,application/json">
+      <button class="mini" id="aj-importar">Importar</button>
+    </div>
+    <div class="aj">
+      <span class="pn"><b>Backups automáticos</b><small>Uma cópia completa a cada 10 minutos, guardando as últimas 20.</small></span>
+      <button class="mini" id="aj-backup">Criar backup agora</button>
+    </div>
+    <div class="sec2"><span>Diagnóstico</span><small>útil para conferir o deploy</small></div>
+    <div class="aj">
+      <span class="pn"><b>Onde os dados estão sendo guardados</b><small id="aj-origem">verificando...</small></span>
+      <button class="mini" id="aj-testar">Testar conexão</button>
+    </div>
+    <div class="msg ${erro ? 'err' : ''}" id="aj-msg" role="status">${esc(msg || '')}</div>
+    <button class="mini" id="aj-fechar" style="margin-top:14px">Fechar</button>`;
+  $('ajustes').classList.add('show');
+
+  $('aj-fechar').onclick = () => $('ajustes').classList.remove('show');
+
+  const testarConexao = async () => {
+    const el = $('aj-origem');
+    if (!el) return;
+    el.style.color = '';
+    el.textContent = 'verificando...';
+    try {
+      const r = await (await fetch(API + '/api/ping')).json();
+      if (!r.nuvem) {
+        el.style.color = 'var(--bad)';
+        el.textContent = 'Sem banco configurado: usando arquivos locais e os dados NÃO ficam salvos na nuvem.';
+        return;
+      }
+      if (r.banco === false) {
+        el.style.color = 'var(--bad)';
+        el.textContent = 'Banco configurado em ' + r.origem + ', mas a consulta falhou. Confira a DATABASE_URL e se as tabelas existem.';
+        return;
+      }
+      el.style.color = 'var(--ok)';
+      el.textContent = 'Banco conectado: ' + r.origem + ' · tudo sendo salvo na nuvem.';
+    } catch {
+      el.style.color = 'var(--bad)';
+      el.textContent = 'Sem resposta do servidor.';
+    }
+  };
+  $('aj-testar').onclick = testarConexao;
+  testarConexao();
+
+  $('aj-salvar').onclick = async () => {
+    const dias = Number($('aj-dias').value);
+    if (!Number.isInteger(dias) || dias < 1 || dias > 60) return msgAjustes('Use um número de 1 a 60 dias.', true);
+    const r = await salvarPrefs({ diasRevisao: dias });
+    msgAjustes(r.ok ? `Revisão ajustada para ${dias} dia(s).` : r.erro, !r.ok);
+  };
+
+  $('aj-meta-salvar').onclick = async () => {
+    const tipo = $('aj-meta-tipo').value === 'minutos' ? 'minutos' : 'sessoes';
+    const valor = Number($('aj-meta-valor').value);
+    if (!Number.isInteger(valor) || valor < 1 || valor > 600) return msgAjustes('Use uma quantidade de 1 a 600.', true);
+    const r = await salvarPrefs({ metaDia: { tipo, valor } });
+    msgAjustes(r.ok ? `Meta do dia: ${valor} ${tipo === 'minutos' ? 'minuto(s)' : 'exercício(s)'}.` : r.erro, !r.ok);
+  };
+
+  $('aj-extra-salvar').onclick = async () => {
+    const r = await salvarPrefs({
+      jogoTamanho: $('aj-jogo-tam').value === 'grande' ? 'grande' : 'normal',
+      reduzirMovimento: $('aj-reduzir').checked
+    });
+    msgAjustes(r.ok ? 'Preferências do jogo salvas.' : r.erro, !r.ok);
+  };
+
+  $('aj-exportar').onclick = async () => {
+    try {
+      const dados = await (await fetch(API + '/api/perfis/' + perfil.id + '/exportar')).json();
+      const nome = 'perfil-' + perfil.nome.replace(/[^\w\-]+/g, '_') + '-' + diaLocal() + '.json';
+      baixarJson(nome, dados);
+      msgAjustes('Backup do perfil baixado.');
+    } catch {
+      msgAjustes('Não consegui exportar agora. O servidor está ligado?', true);
+    }
+  };
+
+  $('aj-importar').onclick = async () => {
+    const campo = $('aj-arquivo');
+    const arq = campo.files && campo.files[0];
+    if (!arq) return msgAjustes('Escolha um arquivo .json primeiro.', true);
+    let dados;
+    try {
+      dados = JSON.parse(await arq.text());
+    } catch {
+      return msgAjustes('Esse arquivo não é um JSON válido.', true);
+    }
+    try {
+      const r = await fetch(API + '/api/perfis/importar', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados)
+      });
+      const j = await r.json();
+      if (!r.ok) return msgAjustes(j.erro || 'Não consegui importar.', true);
+      msgAjustes(`Perfil "${j.perfil.nome}" importado com ${j.perfil.licoes} lições. Ele já aparece na tela de perfis.`);
+      listarPerfis();
+    } catch {
+      msgAjustes('Servidor desligado. Rode "npm run dev".', true);
+    }
+  };
+
+  $('aj-backup').onclick = async () => {
+    try {
+      const r = await (await fetch(API + '/api/backups', { method: 'POST' })).json();
+      msgAjustes(r.sucesso ? 'Backup criado na pasta "backups".' : 'Não consegui criar o backup.', !r.sucesso);
+    } catch {
+      msgAjustes('Servidor desligado. Rode "npm run dev".', true);
+    }
+  };
+}
+
+/* =======================================================================
+   JOGO DAS PALAVRAS
+   ======================================================================= */
+const J = {
+  ativo: false, pausado: false, fimOnda: false, modalidade: 'classico',
+  palavras: [], ativas: [], destruidas: 0,
+  pontos: 0, combo: 0, melhorCombo: 0, vidas: 100, onda: 1, bombas: 0,
+  bons: 0, erros: 0, inicio: 0, ultimo: 0, quadro: 0,
+  dificuldade: 1, restantes: 0, espera: 0, palavrasOnda: 0,
+  ondaInicio: 0, ondaVidas: 0, ondaErros: 0, ondaBons: 0,
+  largura: 0, altura: 0
+};
+const RAIO_BASE = 56;
+
+function abrirJogo() {
+  if (!perfil) return abrirPerfis();
+  fecharModais();
+  const rec = (painel && painel.recordes && painel.recordes.jogo) || null;
+  $('jogo-box').innerHTML = `
+    <div class="jg-setup">
+      <h2>Jogo das palavras</h2>
+      <p>As palavras vêm das bordas até a sua base. Digite a palavra inteira para destruí-la antes que chegue. As palavras usam as letras que você já aprendeu e dão mais peso às suas teclas fracas — é treino disfarçado de jogo.</p>
+      <div class="jg-modos">
+        <button class="mini on" data-mod="classico">Clássico</button>
+        <button class="mini" data-mod="precisao">Precisão</button>
+        <button class="mini" data-mod="zen">Zen</button>
+      </div>
+      <div class="cards">
+        <div><b>${rec ? rec.pontos : 0}</b><small>recorde de pontos</small></div>
+        <div><b>${rec ? rec.onda : 0}</b><small>melhor onda</small></div>
+        <div><b>${rec ? rec.combo : 0}</b><small>melhor combo</small></div>
+      </div>
+      <div class="sug" style="border-style:solid">
+        <b>Como jogar</b><br>
+        • Digite a primeira letra para travar a palavra mais próxima da base.<br>
+        • Acertos seguidos sobem o combo e multiplicam os pontos.<br>
+        • A cada 15 de combo você ganha uma <b>bomba</b>: aperte <b>Espaço</b> para limpar a tela.<br>
+        • <b>Esc</b> pausa. O jogo não mexe na sua lição, na etapa nem nas metas.
+      </div>
+      <button id="jg-comecar">Começar</button>
+      <button class="mini" id="jg-voltar">Voltar</button>
+    </div>`;
+  $('jogo').classList.add('show');
+  $('jogo-box').onclick = e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.id === 'jg-voltar') { $('jogo').classList.remove('show'); return; }
+    if (b.dataset.mod) {
+      document.querySelectorAll('.jg-modos .mini').forEach(x => x.classList.toggle('on', x === b));
+      J.modalidade = b.dataset.mod;
+      return;
+    }
+    if (b.id === 'jg-comecar') jogoPreparar(J.modalidade);
+  };
+}
+
+async function jogoPreparar(mod) {
+  let j;
+  try {
+    j = await (await fetch(API + '/api/jogo/palavras?perfil=' + perfil.id)).json();
+  } catch {
+    aviso('Servidor desligado. Rode "npm run dev" e atualize a página.', 'Sem conexão');
+    return;
+  }
+  J.palavras = (j.palavras || []).filter(x => x && typeof x.p === 'string' && x.p.length >= 2);
+  if (!J.palavras.length) J.palavras = [{ p: 'fj', peso: 1 }];
+  J.modalidade = mod || 'classico';
+  jogoMontar();
+  jogoIniciar();
+}
+
+function jogoMontar() {
+  const grande = painel && painel.prefs && painel.prefs.jogoTamanho === 'grande';
+  $('jogo-box').innerHTML = `
+    <div class="jg-topo">
+      <span class="jg-info"><b id="jg-pontos">0</b><small>pontos</small></span>
+      <span class="jg-info"><b id="jg-onda">1</b><small>onda</small></span>
+      <span class="jg-info"><b id="jg-combo">0</b><small>combo</small></span>
+      <span class="jg-info"><b id="jg-bombas">0</b><small>bombas 💣</small></span>
+      <span class="jg-info"><b id="jg-vidas">5</b><small>vidas</small></span>
+      <button class="mini" id="jg-pausar">Pausar (Esc)</button>
+      <button class="mini x" id="jg-sair">Sair</button>
+    </div>
+    <div class="jg-vida"><i id="jg-vida-barra"></i></div>
+    <div class="arena${grande ? ' grande' : ''}" id="arena">
+      <div class="base">BASE</div>
+      <div class="jg-aviso" id="jg-aviso" hidden></div>
+    </div>
+    <div class="jg-dica" id="jg-dica">Digite a primeira letra de uma palavra para travá-la. Espaço usa a bomba.</div>`;
+  $('jogo-box').onclick = e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.id === 'jg-pausar') jogoPausar(!J.pausado);
+    if (b.id === 'jg-sair') jogoSair();
+  };
+}
+
+function jogoIniciar() {
+  J.ativo = true; J.pausado = false; J.fimOnda = false;
+  J.pontos = 0; J.combo = 0; J.melhorCombo = 0; J.bons = 0; J.erros = 0;
+  J.bombas = 0; J.vidas = 100; J.onda = 1; J.dificuldade = 1;
+  J.destruidas = 0; J.palavrasOnda = 0;
+  J.ativas.forEach(w => w.el.remove());
+  J.ativas = [];
+  const arena = $('arena');
+  J.largura = arena.clientWidth;
+  J.altura = arena.clientHeight;
+  J.inicio = performance.now();
+  J.ultimo = J.inicio;
+  jogoNovaOnda();
+  cancelAnimationFrame(J.quadro);
+  J.quadro = requestAnimationFrame(jogoLoop);
+}
+
+function jogoNovaOnda() {
+  J.restantes = 4 + J.onda * 2;
+  J.espera = 0.15;
+  J.ondaInicio = performance.now();
+  J.ondaVidas = 0; J.ondaErros = 0; J.ondaBons = 0; J.palavrasOnda = 0;
+  atualizarHud();
+}
+
+function jogoLoop(ts) {
+  if (!J.ativo) return;
+  const dt = Math.min(0.06, Math.max(0, (ts - J.ultimo) / 1000));
+  J.ultimo = ts;
+  if (!J.pausado) jogoAtualizar(dt);
+  J.quadro = requestAnimationFrame(jogoLoop);
+}
+
+function jogoAtualizar(dt) {
+  const arena = $('arena');
+  if (!arena) return;
+  if (J.largura !== arena.clientWidth || J.altura !== arena.clientHeight) {
+    J.largura = arena.clientWidth;
+    J.altura = arena.clientHeight;
+  }
+  const maxAtivas = Math.min(1 + Math.floor(J.onda / 2), J.modalidade === 'zen' ? 4 : 5);
+  J.espera -= dt;
+  if (J.restantes > 0 && J.ativas.length < maxAtivas && J.espera <= 0) {
+    jogoSpawn();
+    J.espera = Math.max(0.4, (1.8 - J.onda * 0.09) / J.dificuldade) * (0.85 + Math.random() * 0.5);
+  }
+
+  const cx = J.largura / 2, cy = J.altura / 2;
+  for (let i = J.ativas.length - 1; i >= 0; i--) {
+    const w = J.ativas[i];
+    if (!w || !w.el) continue; // a partida pode ter acabado no meio do laço
+    w.r -= w.vel * dt;
+    const x = cx + Math.cos(w.ang) * w.r;
+    const y = cy + Math.sin(w.ang) * w.r;
+    w.el.style.transform = `translate3d(${Math.round(x - w.w / 2)}px, ${Math.round(y - w.h / 2)}px, 0)`;
+    if (w.r <= RAIO_BASE) jogoBateu(w, i);
+  }
+
+  if (!J.ativo) return;
+  if (!J.restantes && J.ativas.length === 0 && !J.fimOnda) jogoFimDeOnda();
+}
+
+function jogoSortear(lista) {
+  let total = 0;
+  for (const x of lista) total += x.peso || 1;
+  let r = Math.random() * total;
+  for (const x of lista) {
+    r -= x.peso || 1;
+    if (r <= 0) return x;
+  }
+  return lista[lista.length - 1];
+}
+
+function jogoSpawn() {
+  const arena = $('arena');
+  if (!arena || !J.palavras.length) return;
+  const maxLen = Math.min(4 + J.onda, 10);
+  const curtas = J.palavras.filter(x => x.p.length >= 3 && x.p.length <= maxLen);
+  const pool = curtas.length >= 4 ? curtas : J.palavras.filter(x => x.p.length <= maxLen);
+  const escolhida = jogoSortear(pool.length ? pool : J.palavras);
+  const texto = escolhida.p;
+
+  const el = document.createElement('div');
+  el.className = 'palavra';
+  el.innerHTML = [...texto].map((c, i) => `<span class="${i === 0 ? 'atual' : ''}">${esc(c)}</span>`).join('');
+  arena.appendChild(el);
+
+  const ang = Math.random() * Math.PI * 2;
+  const r = Math.hypot(J.largura, J.altura) / 2 + 70;
+  const vel = (24 + J.onda * 4.5) * J.dificuldade * (0.9 + Math.random() * 0.25) * (J.modalidade === 'zen' ? 0.75 : 1);
+  const w = { el, texto, tipado: 0, ang, r, vel, w: el.offsetWidth, h: el.offsetHeight };
+  const cx = J.largura / 2, cy = J.altura / 2;
+  el.style.transform = `translate3d(${Math.round(cx + Math.cos(ang) * r - w.w / 2)}px, ${Math.round(cy + Math.sin(ang) * r - w.h / 2)}px, 0)`;
+  J.ativas.push(w);
+  J.restantes = Math.max(0, J.restantes - 1);
+}
+
+function jogoTecla(e) {
+  if (!J.ativo) return;
+  if (e.key === 'Escape') { e.preventDefault(); jogoPausar(!J.pausado); return; }
+  if (e.key === ' ') { e.preventDefault(); jogoBomba(); return; }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key.length !== 1) return;
+  const t = e.key.toLowerCase();
+  const travada = J.ativas.find(w => w.travada);
+  if (travada) { jogoLetra(travada, t); return; }
+  const candidatas = J.ativas.filter(w => !w.travada && w.texto[0] === t);
+  if (!candidatas.length) { jogoErrou(null); return; }
+  candidatas.sort((a, b) => a.r - b.r);
+  const alvo = candidatas[0];
+  alvo.travada = true;
+  J.ativas.forEach(w => w.el.classList.toggle('foco', w === alvo));
+  jogoLetra(alvo, t);
+}
+
+function jogoLetra(w, t) {
+  const esperada = w.texto[w.tipado];
+  if (t !== esperada) { jogoErrou(w); return; }
+  const spans = w.el.children;
+  if (spans[w.tipado]) spans[w.tipado].className = 'ok';
+  w.tipado++;
+  J.bons++; J.ondaBons++;
+  if (w.tipado >= w.texto.length) { jogoCompletou(w); return; }
+  if (spans[w.tipado]) spans[w.tipado].className = 'atual';
+  beep(620 + w.tipado * 35, .05, 'triangle', .03);
+}
+
+function jogoErrou(w) {
+  J.erros++; J.ondaErros++;
+  J.combo = 0;
+  J.pontos = Math.max(0, J.pontos - 2);
+  somErro();
+  if (w) {
+    w.el.classList.remove('erro');
+    void w.el.offsetWidth;
+    w.el.classList.add('erro');
+    // no modo precisão a palavra perde o foco
+    if (J.modalidade === 'precisao') {
+      w.travada = false;
+      w.el.classList.remove('foco');
+      [...w.el.children].forEach((s, i) => { s.className = i < w.tipado ? 'ok' : i === w.tipado ? 'atual' : ''; });
+    }
+  }
+  atualizarHud();
+}
+
+function jogoCompletou(w) {
+  const idx = J.ativas.indexOf(w);
+  if (idx >= 0) J.ativas.splice(idx, 1);
+  explosao(w.el, 18);
+  w.el.remove();
+  J.combo++;
+  if (J.combo > J.melhorCombo) J.melhorCombo = J.combo;
+  J.destruidas++;
+  J.palavrasOnda++;
+  const mult = 1 + Math.floor(J.combo / 5) * 0.5;
+  J.pontos += Math.round((10 + w.texto.length * 3) * mult);
+  if (J.combo % 15 === 0) {
+    J.bombas = Math.min(3, J.bombas + 1);
+    avisoJogo('💣 Bomba! Aperte Espaço');
+  }
+  if (J.combo === 10 || J.combo === 20 || J.combo === 30) festa(false);
+  beep(520 + Math.min(J.combo, 20) * 28, .09, 'triangle', .05);
+  atualizarHud();
+  if (!J.restantes && J.ativas.length === 0) jogoFimDeOnda();
+}
+
+function jogoBateu(w, i) {
+  w.el.remove();
+  J.ativas.splice(i, 1);
+  J.combo = 0;
+  J.erros++;
+  J.ondaVidas++;
+  if (J.modalidade !== 'zen') {
+    const dano = J.modalidade === 'precisao' ? 100 : 20;
+    J.vidas = Math.max(0, J.vidas - dano);
+    tremor();
+    somErro();
+  }
+  atualizarHud();
+  if (J.vidas <= 0) jogoFim();
+}
+
+function jogoBomba() {
+  if (!J.ativo || J.pausado || J.bombas <= 0 || !J.ativas.length) return;
+  J.bombas--;
+  let ganho = 0;
+  J.ativas.forEach(w => {
+    explosao(w.el, 12);
+    w.el.remove();
+    ganho += 5;
+  });
+  J.ativas = [];
+  J.pontos += ganho;
+  J.destruidas += 1;
+  somFim();
+  atualizarHud();
+  if (!J.restantes) jogoFimDeOnda();
+}
+
+function jogoFimDeOnda() {
+  if (J.fimOnda || !J.ativo) return;
+  J.fimOnda = true;
+  const dur = Math.max(0.001, (performance.now() - J.ondaInicio) / 1000);
+  const totalLetras = J.ondaBons + J.ondaErros;
+  const precisaoOnda = totalLetras ? J.ondaBons / totalLetras : 1;
+  const ritmo = J.palavrasOnda > 0 ? dur / J.palavrasOnda : dur;
+  let msg = 'ritmo mantido';
+  if (J.ondaVidas === 0 && precisaoOnda >= 0.95 && ritmo < 4) {
+    J.dificuldade = Math.min(3, J.dificuldade + 0.12);
+    msg = 'ficou fácil, aumentando a velocidade';
+  } else if (J.ondaVidas >= 2 || precisaoOnda < 0.75) {
+    J.dificuldade = Math.max(0.6, J.dificuldade - 0.15);
+    msg = 'mais calmo, para você acertar';
+  }
+  const box = $('jg-aviso');
+  if (box) {
+    box.hidden = false;
+    box.innerHTML = `Onda ${J.onda} concluída!<small>${J.pontos} pontos · precisão da onda ${Math.round(precisaoOnda * 100)}% · ${msg}</small>`;
+  }
+  somFim();
+  setTimeout(() => {
+    if (!J.ativo) return;
+    const b = $('jg-aviso');
+    if (b) b.hidden = true;
+    J.onda++;
+    J.fimOnda = false;
+    jogoNovaOnda();
+  }, 1700);
+}
+
+function jogoPausar(pausar) {
+  if (!J.ativo) return;
+  J.pausado = !!pausar;
+  const box = $('jg-aviso');
+  if (!box) return;
+  if (J.pausado) {
+    box.hidden = false;
+    box.innerHTML = '';
+    box.appendChild(document.createTextNode('Pausado'));
+    const small = document.createElement('small');
+    small.textContent = 'Esc ou o botão para continuar';
+    box.appendChild(small);
+    const b = document.createElement('button');
+    b.className = 'mini';
+    b.textContent = 'Continuar';
+    b.style.marginTop = '8px';
+    b.onclick = () => jogoPausar(false);
+    box.appendChild(document.createElement('br'));
+    box.appendChild(b);
+  } else {
+    box.hidden = true;
+    box.innerHTML = '';
+    J.ultimo = performance.now();
+  }
+}
+
+function jogoSair() {
+  const pontos = J.pontos;
+  jogoEncerrar(false);
+  $('jogo').classList.remove('show');
+  if (pontos > 0) {
+    aviso('A partida foi encerrada sem salvar recorde. Na próxima, vá até o fim.', 'Jogo encerrado');
+  }
+}
+
+function jogoFim() {
+  if (!J.ativo) return;
+  jogoEncerrar(true);
+}
+
+function jogoEncerrar(registrar) {
+  J.ativo = false;
+  J.pausado = false;
+  cancelAnimationFrame(J.quadro);
+  if (J.ativas) {
+    J.ativas.forEach(w => w.el.remove());
+    J.ativas = [];
+  }
+  if (registrar) jogoEnviarResultado();
+}
+
+async function jogoEnviarResultado() {
+  const segundos = Math.max(1, Math.round((performance.now() - J.inicio) / 1000));
+  const precisao = J.bons + J.erros ? Math.round((J.bons / (J.bons + J.erros)) * 100) : 0;
+  const corpo = {
+    perfilId: perfil.id, modalidade: J.modalidade, pontos: J.pontos, onda: J.onda,
+    combo: J.melhorCombo, precisao, palavras: J.destruidas, segundos, id: novoId()
+  };
+  let j = null;
+  try {
+    const res = await fetch(API + '/api/jogo/resultado', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo)
+    });
+    if (res.ok) j = await res.json();
+    else guardarFila('/api/jogo/resultado', corpo);
+  } catch {
+    guardarFila('/api/jogo/resultado', corpo);
+  }
+  if (j && j.painel) aplicarPainel(j.painel);
+  if (j && j.conquistasNovas && j.conquistasNovas.length) setTimeout(() => mostrarConquistas(j.conquistasNovas), 600);
+  jogoMostrarFim(j);
+}
+
+function jogoMostrarFim(j) {
+  const rec = (painel && painel.recordes && painel.recordes.jogo) || null;
+  const arena = $('arena');
+  if (!arena) return;
+  const antigo = arena.querySelector('.jg-fim');
+  if (antigo) antigo.remove();
+  const caixa = document.createElement('div');
+  caixa.className = 'jg-fim';
+  caixa.innerHTML = `
+    <div class="res${j && j.novoRecorde ? ' perfeito rapido' : ''}">
+      ${j && j.novoRecorde ? '<div class="selo">NOVO RECORDE!</div>' : ''}
+      <h3>${J.vidas > 0 ? 'Você saiu da partida' : 'A base caiu!'}</h3>
+      <div class="big">
+        <div><b>${J.pontos}</b><small>pontos</small></div>
+        <div><b>${J.onda}</b><small>onda</small></div>
+        <div><b>${J.melhorCombo}</b><small>combo</small></div>
+      </div>
+      <div class="jev">
+        <div>Palavras destruídas: <b>${J.destruidas}</b></div>
+        <div>Recorde deste perfil: <b>${rec ? rec.pontos : 0}</b> pontos · onda <b>${rec ? rec.onda : 0}</b></div>
+        <div>${j && j.novoRecorde ? 'Recorde novo! O próximo alvo agora é você mesmo.' : 'O jogo não mexe na sua lição: o progresso das lições continua igual.'}</div>
+      </div>
+      <button id="jg-de-novo">Jogar de novo (Enter)</button>
+      <button class="mini" id="jg-menu" style="margin-left:8px">Trocar modo</button>
+    </div>`;
+  arena.appendChild(caixa);
+  const btn = caixa.querySelector('#jg-de-novo');
+  if (btn) btn.onclick = () => { caixa.remove(); jogoIniciar(); };
+  const menu = caixa.querySelector('#jg-menu');
+  if (menu) menu.onclick = () => abrirJogo();
+  if (J.pontos > 0) somFim();
+}
+
+function atualizarHud() {
+  const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+  set('jg-pontos', J.pontos);
+  set('jg-onda', J.onda);
+  set('jg-combo', J.combo);
+  set('jg-bombas', J.bombas);
+  set('jg-vidas', Math.ceil(Math.max(0, J.vidas) / 20));
+  const barra = $('jg-vida-barra');
+  if (barra) barra.style.width = Math.max(0, J.vidas) + '%';
+}
+
+function avisoJogo(texto) {
+  const box = $('jg-dica');
+  if (box) {
+    box.textContent = texto;
+    setTimeout(() => { if (box) box.textContent = 'Digite a primeira letra de uma palavra para travá-la. Espaço usa a bomba.'; }, 2600);
+  }
+}
+
+function explosao(el, n) {
+  if (!el || reduz()) return;
+  const r = el.getBoundingClientRect();
+  burst(r.left + r.width / 2, r.top + r.height / 2, '#6ee7ff', n || 16);
+}
+
+function tremor() {
+  const a = $('arena');
+  if (!a) return;
+  a.style.animation = 'none';
+  void a.offsetWidth;
+  a.style.animation = 'shake .3s';
+  setTimeout(() => { a.style.animation = ''; }, 320);
+}
+
+/* ---------- botões do topo ---------- */
+$('b-jogo').onclick = abrirJogo;
+$('b-testes').onclick = () => abrirTestes();
+$('b-rank').onclick = abrirRanking;
+$('b-ajustes').onclick = () => abrirAjustes();
+
+async function iniciarApp() {
+  try {
+    const lista = await listarPerfis(), salvo = localStorage.getItem('perfilAtual');
+    if (salvo && lista.some(p => p.id === salvo)) selecionar(salvo); else abrirPerfis();
+  } catch {
+    let online = false;
+    try {
+      const r = await fetchSemCodigo(API + '/api/ping');
+      online = r.ok;
+    } catch { /* servidor fora do ar */ }
+    $('texto').textContent = online
+      ? 'O servidor respondeu, mas não consegui carregar os dados. Confira a variável DATABASE_URL e os logs na Vercel.'
+      : 'Sem conexão com o servidor. Verifique se ele está no ar e recarregue.';
+  }
+}
+
+/* ---------- código de acesso (quando CODIGO_ACESSO existe no servidor) ---------- */
+const CHAVE_CODIGO = 'codigoAcesso';
+const fetchSemCodigo = window.fetch.bind(window);
+
+// localStorage pode falhar (modo privado): nunca deixa o app travar por isso.
+const lerCodigoSalvo = () => {
+  try { return localStorage.getItem(CHAVE_CODIGO) || ''; } catch { return ''; }
+};
+const guardarCodigo = valor => {
+  try { localStorage.setItem(CHAVE_CODIGO, valor); return true; } catch { return false; }
+};
+const apagarCodigoSalvo = () => {
+  try { localStorage.removeItem(CHAVE_CODIGO); } catch { /* ignora */ }
+};
+
+// Todo pedido para a API leva o código salvo, se existir.
+window.fetch = (entrada, init) => {
+  const url = typeof entrada === 'string' ? entrada : (entrada && entrada.url) || '';
+  const codigo = lerCodigoSalvo();
+  if (codigo && url.indexOf('/api') !== -1) {
+    const opcoes = Object.assign({}, init);
+    opcoes.headers = Object.assign({}, opcoes.headers, { 'x-codigo': codigo });
+    return fetchSemCodigo(entrada, opcoes);
+  }
+  return fetchSemCodigo(entrada, init);
+};
+
+function pedirCodigo(mensagem) {
+  return new Promise(resolve => {
+    $('acesso').classList.add('show');
+    $('ac-msg').textContent = mensagem || '';
+    const tentar = async () => {
+      const valor = $('ac-codigo').value.trim();
+      if (!valor) { $('ac-msg').textContent = 'Digite o código.'; return; }
+      try {
+        const teste = await fetchSemCodigo(API + '/api/painel?perfil=teste', { headers: { 'x-codigo': valor } });
+        if (teste.status === 401) { $('ac-msg').textContent = 'Código incorreto. Confira e tente de novo.'; return; }
+      } catch {
+        $('ac-msg').textContent = 'Não consegui falar com o servidor.';
+        return;
+      }
+      guardarCodigo(valor);
+      $('acesso').classList.remove('show');
+      resolve(true);
+    };
+    $('ac-entrar').onclick = tentar;
+    $('ac-codigo').onkeydown = e => { if (e.key === 'Enter') tentar(); };
+    setTimeout(() => $('ac-codigo').focus(), 120);
+  });
+}
+
+async function garantirAcesso() {
+  let info = null;
+  try {
+    info = await (await fetchSemCodigo(API + '/api/ping')).json();
+  } catch {
+    return; // servidor fora do ar: o fluxo normal mostra o aviso
+  }
+  if (!info || !info.codigo) return; // site aberto
+  const salvo = lerCodigoSalvo();
+  if (salvo) {
+    try {
+      const teste = await fetchSemCodigo(API + '/api/painel?perfil=teste', { headers: { 'x-codigo': salvo } });
+      if (teste.status !== 401) return;
+    } catch { /* cai no pedido abaixo */ }
+    apagarCodigoSalvo();
+  }
+  await pedirCodigo();
+}
+
+(async function subir() {
+  await garantirAcesso();
+  iniciarApp();
+})();
+</script>
+</body>
+</html>
